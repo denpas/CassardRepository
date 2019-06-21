@@ -1,5 +1,5 @@
 /*
-Programme de test Propulsion 
+Propulsion 
 Pascal DENICOU
 */
 
