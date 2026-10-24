@@ -5,15 +5,16 @@
 
 <!doctype html>
 
-<html>
+<html lang="fr">
 	<head>
-		<title>FAA Cassard</title>
-		<meta name="viewport" content="width=device-width, initial-scale=0.7, maximum-scale=0.7">
+		<meta charset="UTF-8">
+		<title>Diagnostic — Cassard</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
 		
-		<link rel="stylesheet" href="_cassard.css">
 		<link rel='stylesheet prefetch' href='_normalize.min.css'>
 		<link rel='stylesheet prefetch' href='_rangeslider.css'>
 		<link rel="stylesheet" href="style.css">
+		<link rel="stylesheet" href="app.css">
 		
 		<script src='_gauge.min.js'></script>
 		<script src='_jquery.min.js'></script>
@@ -85,7 +86,7 @@
 					}
 					//debug.innerHTML = "<br>" + navigator.platform + " " + ws_host_addr;
 					ws = new WebSocket("ws://" + ws_host_addr + "/_Cassard", "text.phpoc");
-					document.getElementById("ws_state").innerHTML = "Connexion en cours ...";
+					document.getElementById("ws_state").textContent = "Connexion en cours…";
 					ws.onopen = ws_onopen;
 					ws.onclose = ws_onclose;
 					ws.onmessage = ws_onmessage;
@@ -96,14 +97,16 @@
 
 			function ws_onopen()
 			{
-				document.getElementById("ws_state").innerHTML = "<font color='blue'>Connecté</font>";
-				document.getElementById("bt_connect").innerHTML = "Déconnecter";
+				document.getElementById("ws_state").textContent = "Connecté";
+				document.getElementById("ws_state").classList.add("connected");
+				document.getElementById("bt_connect").textContent = "Déconnecter";
 			}
 
 			function ws_onclose()
 			{
-				document.getElementById("ws_state").innerHTML = "<font color='gray'>Non connecté</font>";
-				document.getElementById("bt_connect").innerHTML = "Connecter";
+				document.getElementById("ws_state").textContent = "Non connecté";
+				document.getElementById("ws_state").classList.remove("connected");
+				document.getElementById("bt_connect").textContent = "Connecter";
 				ws.onopen = null;
 				ws.onclose = null;
 				ws.onmessage = null;
@@ -117,60 +120,52 @@
 			}
 		</script>
 	</head>
-	<body>
-		<table width=100% height=100 border=1>
-			<tr>
-				<td bgcolor=#FD5813 align="center">
-					<a href="index.php" style="text-align:center">Menu</a>
-				</td>
-				<td bgcolor=#FC8316>
-					<h1 style="text-align:center">Debug</h1>
-				</td>
-				<td bgcolor=#FAAC1A align="center">
-					<button id="bt_connect" type="button" onclick="connect_onclick();">Connection</button>
-				</td>
-				<td bgcolor=#F8D61D align="center">				
-					<div>
-						<h1><font id="ws_state" size=3	color="gray">Non connecté</font></h1>
-					</div>
-					<!-- span id="debug"></span-->
-				</td>		
-			</tr>
-		</table>
-		<table bgcolor=#FEFFD3 width=100% height=100%>
-			<tr>
-				<div id="page-wrapper">
-					<h1>Protocole debug</h1>
+	<body class="control-page">
+		<header class="app-header">
+			<a class="brand" href="_CassardMenu.php"><span class="brand-mark">C</span>CASSARD <span class="eyebrow" style="color:#b9c9da">PILOTAGE</span></a>
+			<div class="header-title">Console de diagnostic</div>
+			<div class="header-actions">
+				<span class="connection-status" id="ws_state">Non connecté</span>
+				<button class="app-button" id="bt_connect" type="button" onclick="connect_onclick();">Connecter</button>
+			</div>
+		</header>
+		<main class="page-shell">
+			<div id="page-wrapper" class="debug-panel">
+				<div class="eyebrow">Outils techniques</div>
+				<h2>Échange de trames</h2>
+				<p class="page-intro">Envoyez une commande brute au contrôleur et consultez l’historique envoyé.</p>
 
-					<ul id="messages"></ul>
+				<ul id="messages"></ul>
 
-						<textarea id="message" placeholder="Entrer la trame ici..." required></textarea>
-						<button type="button" id="bt_sendTrame" onclick="sendTrame_onclick();">Envoyer la trame</button>
-						<button type="button" id="bt_effacer" onclick="clearSentTrame_onclick();">Effacer la liste des trames envoyées</button>
-				</div>
+				<textarea id="message" placeholder="Entrer la trame ici..." required></textarea>
+				<button class="app-button" type="button" id="bt_sendTrame" onclick="sendTrame_onclick();">Envoyer la trame</button>
+				<button class="app-button" type="button" id="bt_effacer" onclick="clearSentTrame_onclick();">Effacer l’historique</button>
+				<p id="debug-status" class="page-intro" role="status"></p>
+			</div>
 
 				<script>
 					// Get references to elements on the page.
 					var messageField = document.getElementById('message');
 					var messagesList = document.getElementById('messages');
-					var socketStatus = document.getElementById('status');
-					var clearBtn = document.getElementById('bt_effacer');
-					var sendTrameBtn = document.getElementById('bt_sendTrame');
-
 					function sendTrame_onclick() 
 					{
-						// Retrieve the message from the textarea.
 						var message = messageField.value;
 						
-						if(ws && (ws.readyState == 1))
+						if(!ws || (ws.readyState != 1))
 						{			
-							ws.send(message+"\r\n");
+							document.getElementById("debug-status").textContent = "Connectez-vous avant d’envoyer une trame.";
+							return;
 						}
 
-						// Add the message to the messages list.
-						messagesList.innerHTML += '<li class="sent"><span>Envoyé:</span>' + message + '</li>';
+						ws.send(message+"\r\n");
+						var messageItem = document.createElement("li");
+						var messageLabel = document.createElement("span");
+						messageLabel.textContent = "Envoyé :";
+						messageItem.appendChild(messageLabel);
+						messageItem.appendChild(document.createTextNode(message));
+						messagesList.appendChild(messageItem);
+						document.getElementById("debug-status").textContent = "";
 
-						// Clear out the message field.
 						messageField.value = '';
 					}
 					
@@ -179,7 +174,6 @@
 						messagesList.innerHTML = "";
 					};
 				</script>
-			</tr>
-		</table>
+		</main>
 	</body>
 </html>

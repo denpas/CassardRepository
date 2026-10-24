@@ -6,12 +6,26 @@
 
 <!doctype html>
 
-<html>
-<body>
-<form method="POST" action="_CassardMenu.php">
-Identifiant : <input type="TEXT" name="identifiant">
-Mot de passe : <input type="TEXT" name="motDePasse">
-<input type="SUBMIT" value="OK">
-</form>
+<html lang="fr">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Connexion — Cassard</title>
+	<link rel="stylesheet" href="app.css">
+</head>
+<body class="auth-page">
+	<main class="auth-card">
+		<div class="brand"><span class="brand-mark">C</span><span>CASSARD <span class="eyebrow">PILOTAGE</span></span></div>
+		<h1>Bienvenue à bord</h1>
+		<p>Connectez-vous à votre espace de pilotage.</p>
+		<form method="POST" action="_CassardMenu.php">
+			<label class="field-label" for="identifiant">Identifiant</label>
+			<input id="identifiant" type="text" name="identifiant" autocomplete="username" required>
+			<label class="field-label" for="motDePasse">Mot de passe</label>
+			<input id="motDePasse" type="password" name="motDePasse" autocomplete="current-password" required>
+			<button class="app-button" type="submit">Accéder au tableau de bord</button>
+		</form>
+		<div class="auth-footnote">Interface locale de commande · Cassard</div>
+	</main>
 </body>
 </html>

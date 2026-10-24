@@ -5,15 +5,16 @@
 
 <!doctype html>
 
-<html>
+<html lang="fr">
 	<head>
-		<title>FAA Cassard</title>
-		<meta name="viewport" content="width=device-width, initial-scale=0.7, maximum-scale=0.7">
+		<meta charset="UTF-8">
+		<title>Sons &amp; lumières — Cassard</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
 		
-		<link rel="stylesheet" href="_cassard.css">
 		<link rel='stylesheet prefetch' href='_normalize.min.css'>
 		<link rel='stylesheet prefetch' href='_rangeslider.css'>
 		<link rel="stylesheet" href="style.css">
+		<link rel="stylesheet" href="app.css">
 		
 		<script src='_gauge.min.js'></script>
 		<script src='_jquery.min.js'></script>
@@ -85,7 +86,7 @@
 					}
 					//debug.innerHTML = "<br>" + navigator.platform + " " + ws_host_addr;
 					ws = new WebSocket("ws://" + ws_host_addr + "/_Cassard", "text.phpoc");
-					document.getElementById("ws_state").innerHTML = "Connexion en cours ...";
+					document.getElementById("ws_state").textContent = "Connexion en cours…";
 					ws.onopen = ws_onopen;
 					ws.onclose = ws_onclose;
 					ws.onmessage = ws_onmessage;
@@ -96,14 +97,16 @@
 
 			function ws_onopen()
 			{
-				document.getElementById("ws_state").innerHTML = "<font color='blue'>Connecté</font>";
-				document.getElementById("bt_connect").innerHTML = "Déconnecter";
+				document.getElementById("ws_state").textContent = "Connecté";
+				document.getElementById("ws_state").classList.add("connected");
+				document.getElementById("bt_connect").textContent = "Déconnecter";
 			}
 
 			function ws_onclose()
 			{
-				document.getElementById("ws_state").innerHTML = "<font color='gray'>Non connecté</font>";
-				document.getElementById("bt_connect").innerHTML = "Connecter";
+				document.getElementById("ws_state").textContent = "Non connecté";
+				document.getElementById("ws_state").classList.remove("connected");
+				document.getElementById("bt_connect").textContent = "Connecter";
 				ws.onopen = null;
 				ws.onclose = null;
 				ws.onmessage = null;
@@ -117,30 +120,19 @@
 			}
 		</script>
 	</head>
-	<body>
-		<table width=100% height=100 border=1>
-			<tr>
-				<td bgcolor=#FD5813 align="center">
-					<a href="index.php" style="text-align:center">Menu</a>
-				</td>
-				<td bgcolor=#FC8316 align="center">
-					<h1 style="text-align:center">Sons et Lumières</h1>
-				</td>
-				<td bgcolor=#FAAC1A align="center">
-					<button id="bt_connect" type="button" onclick="connect_onclick();">Connection</button>
-				</td>
-				<td bgcolor=#F8D61D aligh="center">				
-					<div>
-						<h1><font id="ws_state" size=3	color="gray">Non connecté</font></h1>
-					</div>
-					<!-- span id="debug"></span-->
-				</td>		
-			</tr>
-		</table>
-		<table bgcolor=#FEFFD3 width=100% height=100%>
-			<tr>
-
-			</tr>
-		</table>
+	<body class="control-page">
+		<header class="app-header">
+			<a class="brand" href="_CassardMenu.php"><span class="brand-mark">C</span>CASSARD <span class="eyebrow" style="color:#b9c9da">PILOTAGE</span></a>
+			<div class="header-title">Sons &amp; lumières</div>
+			<div class="header-actions">
+				<span class="connection-status" id="ws_state">Non connecté</span>
+				<button class="app-button" id="bt_connect" type="button" onclick="connect_onclick();">Connecter</button>
+			</div>
+		</header>
+		<main class="page-shell">
+			<div class="eyebrow">Équipements</div>
+			<h1 class="page-heading">Sons &amp; lumières</h1>
+			<p class="page-intro">Les commandes de ce module ne sont pas encore disponibles dans cette version.</p>
+		</main>
 	</body>
 </html>

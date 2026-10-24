@@ -5,15 +5,16 @@
 
 <!doctype html>
 
-<html>
+<html lang="fr">
 	<head>
-		<title>FAA Cassard</title>
-		<meta name="viewport" content="width=device-width, initial-scale=0.7, maximum-scale=0.7">
+		<meta charset="UTF-8">
+		<title>Tourelle 100 mm — Cassard</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
 		
-		<link rel="stylesheet" href="_cassard.css">
 		<link rel='stylesheet prefetch' href='_normalize.min.css'>
 		<link rel='stylesheet prefetch' href='_rangeslider.css'>
 		<link rel="stylesheet" href="style.css">
+		<link rel="stylesheet" href="app.css">
 		
 		<script src='_gauge.min.js'></script>
 		<script src='_jquery.min.js'></script>
@@ -37,7 +38,7 @@
 					}
 					//debug.innerHTML = "<br>" + navigator.platform + " " + ws_host_addr;
 					ws = new WebSocket("ws://" + ws_host_addr + "/_Cassard", "text.phpoc");
-					document.getElementById("ws_state").innerHTML = "Connexion en cours ...";
+					document.getElementById("ws_state").textContent = "Connexion en cours…";
 					ws.onopen = ws_onopen;
 					ws.onclose = ws_onclose;
 					ws.onmessage = ws_onmessage;
@@ -48,14 +49,16 @@
 
 			function ws_onopen()
 			{
-				document.getElementById("ws_state").innerHTML = "<font color='blue'>Connecté</font>";
-				document.getElementById("bt_connect").innerHTML = "Déconnecter";
+				document.getElementById("ws_state").textContent = "Connecté";
+				document.getElementById("ws_state").classList.add("connected");
+				document.getElementById("bt_connect").textContent = "Déconnecter";
 			}
 
 			function ws_onclose()
 			{
-				document.getElementById("ws_state").innerHTML = "<font color='gray'>Non connecté</font>";
-				document.getElementById("bt_connect").innerHTML = "Connecter";
+				document.getElementById("ws_state").textContent = "Non connecté";
+				document.getElementById("ws_state").classList.remove("connected");
+				document.getElementById("bt_connect").textContent = "Connecter";
 				ws.onopen = null;
 				ws.onclose = null;
 				ws.onmessage = null;
@@ -70,97 +73,81 @@
 			
 		</script>
 	</head>
-	<body>
-		<table width=100% height=100 border=1>
-			<tr>
-				<td bgcolor=#FD5813 align="center">
-					<a href="index.php" style="text-align:center">Menu</a>
-				</td>
-				<td bgcolor=#FC8316 align="center">
-					<h1 style="text-align:center">Tourelle 100mm</h1>
-				</td>
-				<td bgcolor=#FAAC1A align="center">
-					<button id="bt_connect" type="button" onclick="connect_onclick();">Connection</button>
-				</td>
-				<td bgcolor=#F8D61D align="center">				
-					<div>
-						<h1><font id="ws_state" size=3	color="gray">Non connecté</font></h1>
-					</div>
-				</td>		
-			</tr>
-		</table>
-		<table width=100% height=400 border=1>
-			<tr>
-				<td width=50% height=400 border=1>
-					<!--******************************************************************************************************************************* -->
-					<!-- *******************************************           CURSEUR ELEVATION              ***************************************** -->
-					<!-- ****************************************************************************************************************************** -->
-					
-					<center><input type="range" id="ElevationSlider" data-orientation="vertical" min="0" max="60" value="0"></center>
-					
-					<script>
-						var $elementElevation = $('input[id="ElevationSlider"]');
-						var elevation = 0;
-						var azimuth = 0;
+	<body class="control-page">
+		<header class="app-header">
+			<a class="brand" href="_CassardMenu.php"><span class="brand-mark">C</span>CASSARD <span class="eyebrow" style="color:#b9c9da">PILOTAGE</span></a>
+			<div class="header-title">Tourelle 100 mm</div>
+			<div class="header-actions">
+				<span class="connection-status" id="ws_state">Non connecté</span>
+				<button class="app-button" id="bt_connect" type="button" onclick="connect_onclick();">Connecter</button>
+			</div>
+		</header>
+		<main class="control-main">
+			<section class="control-card vertical-control">
+				<h2>Élévation</h2>
+				<p>Inclinaison · de 0° à 60°</p>
+				<span class="control-value" id="elevation-value">0°</span>
+				<input type="range" id="ElevationSlider" data-orientation="vertical" min="0" max="60" value="0">
+				<script>
+					var $elementElevation = $('input[id="ElevationSlider"]');
+					var elevation = 0;
+					var azimuth = 0;
 
-						function sendTurretPosition()
+					function sendTurretPosition()
+					{
+						if(ws && (ws.readyState == 1))
 						{
-							if(ws && (ws.readyState == 1))
+							ws.send("1,4,"+azimuth+","+elevation+",255\r\n");
+						}
+					}
+
+					function updateElevation(val)
+					{
+						elevation = Number(val);
+						document.getElementById("elevation-value").textContent = elevation + "°";
+						sendTurretPosition();
+					}
+
+					$elementElevation
+						.rangeslider({
+							polyfill: false,
+							onInit: function()
 							{
-								ws.send("1,4,"+azimuth+","+elevation+",255\r\n");
 							}
-						}
+					  })
+					  .on('input', function()
+					  {
+						updateElevation(this.value);
+					  });
+				</script>
+			</section>
+			<section class="control-card">
+				<h2>Azimut</h2>
+				<p>Orientation · de 0° à 180°</p>
+				<span class="control-value" id="azimuth-value">0°</span>
+				<input type="range" id="AzimutSlider" data-orientation="horizontal" min="0" max="180" value="0">
+				<script>
+					var $elementAzimut = $('input[id="AzimutSlider"]');
 
-						function updateElevation(val)
-						{
-							elevation = Number(val);
-							sendTurretPosition();
-						}
+					function updateAzimut(val)
+					{
+						azimuth = Number(val);
+						document.getElementById("azimuth-value").textContent = azimuth + "°";
+						sendTurretPosition();
+					}
 
-						$elementElevation
-							.rangeslider({
-								polyfill: false,
-								onInit: function() 
-								{
-								//updateElevation(this.value);
-								}
-						  })
-						  .on('input', function() 
-						  {
-							updateElevation(this.value);
-						  });
-					</script>
-					
-				</td>
-				<td width=50% height=400 border=1>
-					<!--******************************************************************************************************************************* -->
-					<!-- *******************************************           CURSEUR AZIMUT              ***************************************** -->
-					<!-- ****************************************************************************************************************************** -->
-					<center><input type="range" id="AzimutSlider" data-orientation="horizontal" min="0" max="180" value="0"></center>
-					
-					<script>
-						var $elementAzimut = $('input[id="AzimutSlider"]');
-			
-						function updateAzimut(val) 
-						{
-							azimuth = Number(val);
-							sendTurretPosition();
-						}
-
-						$elementAzimut
-							.rangeslider({
-								polyfill: false,
-								onInit: function() 
-								{
-								//updateAzimut(this.value);
-								}
-							})
-							.on('input', function() {
-								updateAzimut(this.value);
-							});
-					</script>		
-				</td>
-			</tr>
-		</table>
+					$elementAzimut
+						.rangeslider({
+							polyfill: false,
+							onInit: function()
+							{
+							}
+						})
+						.on('input', function() {
+							updateAzimut(this.value);
+						});
+				</script>
+			</section>
+		</main>
 	</body>
 </html>

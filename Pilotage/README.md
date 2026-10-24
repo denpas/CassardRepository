@@ -37,6 +37,11 @@ firmwares et les instructions de compilation/deploiement sont dans
 [docs/montage-et-deploiement.md](./docs/montage-et-deploiement.md).
 Le schema des composants et des flux est disponible dans
 [docs/architecture.md](./docs/architecture.md).
+Les ecrans de pilotage et leurs limites sont decrits dans
+[docs/interface-pilotage.md](./docs/interface-pilotage.md); une video de
+simulation est disponible dans [docs/interface-pilotage-demo.mp4](./docs/interface-pilotage-demo.mp4).
+Le dossier de commande 16:9 au format PowerPoint est disponible dans
+[docs/Dossier commande.pptx](./docs/Dossier%20commande.pptx).
 
 ## Compiler
 
