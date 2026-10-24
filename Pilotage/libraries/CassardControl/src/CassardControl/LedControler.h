@@ -1,7 +1,7 @@
 //#ifndef LedControler_h
 //#define LedControler_h
 
-#include <C:\Program Files (x86)\Arduino\hardware\arduino\avr\cores\arduino\Arduino.h>
+#include <Arduino.h>
 
 
 
@@ -40,6 +40,7 @@ private:
 LedControler::LedControler()
 //---------------------------------------------------------------------------------------------------------------------------------------
 {
+	this->_ledPin = 0;
 	this->SetDefault(true);
 }
 
@@ -60,7 +61,7 @@ void LedControler::SetDefault(boolean init)
 	this->_delayOff = 500;
 	this->_delayOn = 500;
 	this->_blinkingTimes = -1;
-	digitalWrite(_ledPin, LOW);
+	if (!init) digitalWrite(_ledPin, LOW);
 }
 
 //---------------------------------------------------------------------------------------------------------------------------------------

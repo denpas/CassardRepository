@@ -1,87 +1,102 @@
-#include <C:\Program Files (x86)\Arduino\hardware\arduino\avr\cores\arduino\Arduino.h>
+#ifndef ContMotorControler_h
+#define ContMotorControler_h
 
-class LogControler
+#include <Arduino.h>
+
+class ContMotorControler
 {
     public:
-		bool suspended;
-        LogControler();
-		void Log(String title);
-		void LogTV(String title, int value);
-		void LogTVT(String title1, int value, String title2);
-		void LogTVTV(String title1, int value1, String title2, int value2);
-		void LogTVTVT(String title1, int value1, String title2, int value2, String title3);
-		void SetSpeed(int speed);
-		void Suspend();
+        ContMotorControler();
+        int TurnLeft(int speed);
+		int TurnRight(int speed);
+		int Stop();
+		void AttachToPin(int ContMotorSpeedPin, int ContMotorDirectionPin);
+		void SetDefault();
+		void SetId(String id);
     private:
-        int _speed;
+		String _id;
+		int _posMinAllowed;
+        int _posMaxAllowed;
+		int _ContMotorDirectionPin;
+		int _ContMotorSpeedPin;		
 };
 
-LogControler SerialLog;
-
 //---------------------------------------------------------------------------------------------------------------------------------------
-LogControler::LogControler()
+void ContMotorControler::SetDefault()
 //---------------------------------------------------------------------------------------------------------------------------------------
 {
-	suspended = true;
-	if (suspended) return;
-	SetSpeed(9600);
+	this->_posMinAllowed = 0;
+	this->_posMaxAllowed = 254;
+}
+	
+//---------------------------------------------------------------------------------------------------------------------------------------
+ContMotorControler::ContMotorControler()
+//---------------------------------------------------------------------------------------------------------------------------------------
+{
+	SetDefault();
 }
 
 //---------------------------------------------------------------------------------------------------------------------------------------
-void LogControler::SetSpeed(int speed)
+int ContMotorControler::TurnLeft(int speed)
 //---------------------------------------------------------------------------------------------------------------------------------------
 {
-	if (suspended) return;
-	_speed = speed;
-	Serial.begin(_speed); 
+	if (speed < 0 || speed > this->_posMaxAllowed)
+		return -1;
+
+	SerialLog.LogTV("["+ _id + "] Turn left at speed :", speed);
+	
+	digitalWrite(this->_ContMotorDirectionPin, LOW);  
+	analogWrite(this->_ContMotorSpeedPin, speed);
+
+	return 0;
 }
 
 //---------------------------------------------------------------------------------------------------------------------------------------
-void LogControler::Log(String title)
+int ContMotorControler::Stop()
 //---------------------------------------------------------------------------------------------------------------------------------------
 {
-	if (suspended) return;
-	Serial.println(title);
+	SerialLog.Log("["+ _id + "] Stop");
+
+	digitalWrite(this->_ContMotorSpeedPin, 0); 
+
+	return 0;
+}
+//---------------------------------------------------------------------------------------------------------------------------------------
+int ContMotorControler::TurnRight(int speed)
+//---------------------------------------------------------------------------------------------------------------------------------------
+{
+	if (speed < 0 || speed > this->_posMaxAllowed)
+		return -1;
+
+	SerialLog.LogTV("[" + _id + "] Turn right at speed :", speed);
+
+	digitalWrite(this->_ContMotorDirectionPin, HIGH);  
+
+	analogWrite(this->_ContMotorSpeedPin, speed);
+
+	return 0;
 }
 
 //---------------------------------------------------------------------------------------------------------------------------------------
-void LogControler::LogTV(String title, int value)
+void ContMotorControler::AttachToPin(int ContMotorSpeedPin, int ContMotorDirectionPin)
 //---------------------------------------------------------------------------------------------------------------------------------------
 {
-	if (suspended) return;
-	Serial.print(title);
-	Serial.println(value);
+	this->_ContMotorSpeedPin = ContMotorSpeedPin;
+	pinMode(ContMotorSpeedPin, OUTPUT);
+
+	this->_ContMotorDirectionPin = ContMotorDirectionPin;
+	pinMode(ContMotorDirectionPin, OUTPUT);
+
+	SerialLog.LogTV("[" + _id + "] Attached <speed> to pin :", ContMotorSpeedPin);
+	SerialLog.LogTV("[" + _id + "] Attached <direction1> to pin :", ContMotorDirectionPin);
 }
 
-//---------------------------------------------------------------------------------------------------------------------------------------
-void LogControler::LogTVT(String title1, int value,String title2)
-//---------------------------------------------------------------------------------------------------------------------------------------
-{
-	if (suspended) return;
-	Serial.print(title1);
-	Serial.print(value);
-	Serial.println(title2);
-}
 
 //---------------------------------------------------------------------------------------------------------------------------------------
-void LogControler::LogTVTV(String title1, int value1, String title2, int value2)
+void ContMotorControler::SetId(String id)
 //---------------------------------------------------------------------------------------------------------------------------------------
 {
-	if (suspended) return;
-	Serial.print(title1);
-	Serial.print(value1);
-	Serial.print(title2);
-	Serial.println(value2);
+	_id = id;
 }
 
-//---------------------------------------------------------------------------------------------------------------------------------------
-void LogControler::LogTVTVT(String title1, int value1, String title2, int value2, String title3)
-//---------------------------------------------------------------------------------------------------------------------------------------
-{
-	if (suspended) return;
-	Serial.print(title1);
-	Serial.print(value1);
-	Serial.print(title2);
-	Serial.print(value2);
-	Serial.println(title3);
-}
+#endif

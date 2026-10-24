@@ -178,21 +178,20 @@
 						var $elementPuissance = $('input[id="PuissanceSlider"]');
 						
 						function updatePuissance(val) {
-							Puissance = Math.abs(val);
-							RotationMoteur = Puissance * 40;
-							RotationArbre = Puissance * 15;
-							if (val > 0)
+							var power = Number(val);
+							Puissance = Math.abs(power);
+							if (power > 0)
 							{
 								ForwardEngine(Puissance);
 							}
-							if (val < 0)
+							else if (power < 0)
 							{
 								ReverseEngine(Puissance);
-							} 
-							if (val = 0)
+							}
+							else
 							{
 								StopEngine();
-							} 
+							}
 						}
 
 						$elementPuissance

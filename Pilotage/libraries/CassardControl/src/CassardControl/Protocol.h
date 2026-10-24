@@ -1,4 +1,7 @@
 
+#ifndef CASSARD_PROTOCOL_H
+#define CASSARD_PROTOCOL_H
+
 //---------------------------------------------------------------------------------------------------------------------------------------
 //MODULE CONSTANTS
 //---------------------------------------------------------------------------------------------------------------------------------------
@@ -26,3 +29,5 @@ const byte PROPULSION_GOSTRAIGHT			= 17;
 const byte PROPULSION_SETPROPORTIONALMODE	= 18;
 
 const byte END_OF_TRAME	   					= 255;
+
+#endif

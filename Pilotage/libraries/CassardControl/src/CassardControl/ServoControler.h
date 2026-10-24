@@ -1,7 +1,7 @@
 #ifndef ServoControler_h
 #define ServoControler_h
 
-#include <C:\Program Files (x86)\Arduino\hardware\arduino\avr\cores\arduino\Arduino.h>
+#include <Arduino.h>
 
 //#include "Servo.h"
 #include "VarSpeedServo.h" 
@@ -97,7 +97,7 @@ int ServoControler::SetSpeed(int speed)
 int ServoControler::SetRange(int minPos,int maxPos)
 //---------------------------------------------------------------------------------------------------------------------------------------
 {
-    if ((minPos < RangeMin) || (maxPos > RangeMax)) 
+    if ((minPos < RangeMin) || (maxPos > RangeMax) || (minPos > maxPos))
     {
 		SerialLog.Log("["+ this->_id + "] Error Range out of range");
 		SerialLog.LogTV("["+ this->_id + "] Range Min must be >= ", RangeMin);

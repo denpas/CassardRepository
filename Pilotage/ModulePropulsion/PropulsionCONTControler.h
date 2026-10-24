@@ -1,10 +1,10 @@
 //#ifndef PropulsionCONTControler_h
 //#define PropulsionCONTControler_h
 
-#include <C:\Program Files (x86)\Arduino\hardware\arduino\avr\cores\arduino\Arduino.h>
-#include "LedControler.h"
-#include "ServoControler.h"
-#include "ContMotorControler.h"
+#include <Arduino.h>
+#include <CassardControl/LedControler.h>
+#include <CassardControl/ServoControler.h>
+#include <CassardControl/ContMotorControler.h>
 
 const int MinimumMotorPositionValue = 64;
 const int MotorPositionAmplitude = 254 - MinimumMotorPositionValue;
@@ -57,12 +57,12 @@ class PropulsionCONTControler
 		int _turningAngle;
 		int _enginePower;
 
-		ContMotorControler PropulsionLeftEngine;	// Création de l'objet servo pour la Propulsion du moteur Gauche
-		ContMotorControler PropulsionRightEngine;	// Création de l'objet servo pour la Propulsion du moteur Droit
-		ServoControler PropulsionDirection;			// Création de l'objet servo pour la Direction
+		ContMotorControler PropulsionLeftEngine;	// Crï¿½ation de l'objet servo pour la Propulsion du moteur Gauche
+		ContMotorControler PropulsionRightEngine;	// Crï¿½ation de l'objet servo pour la Propulsion du moteur Droit
+		ServoControler PropulsionDirection;			// Crï¿½ation de l'objet servo pour la Direction
 
-		LedControler _ledCommandeOk;				// Création de l'objet led verte pour commande acceptée
-		LedControler _ledCommandeError;				// Création de l'objet led verte pour commande refusée
+		LedControler _ledCommandeOk;				// Crï¿½ation de l'objet led verte pour commande acceptï¿½e
+		LedControler _ledCommandeError;				// Crï¿½ation de l'objet led verte pour commande refusï¿½e
 };
 
 //---------------------------------------------------------------------------------------------------------------------------------------
@@ -100,12 +100,12 @@ void PropulsionCONTControler::Setup(PropulsionCONTParams propulsionCONTParams)
 	_ledCommandeOk.SetId("Led Ok");
 	_ledCommandeOk.SetDefault(false);
 	SerialLog.LogTV("["+ propulsionCONTParams.id+ "] Attached okLed to pin :", propulsionCONTParams.okLedPin);
-	_ledCommandeOk.AttachToPin(propulsionCONTParams.okLedPin);					// attache la pin 2 à l'objet led LedCommandeOk
+	_ledCommandeOk.AttachToPin(propulsionCONTParams.okLedPin);					// attache la pin 2 ï¿½ l'objet led LedCommandeOk
 
 	_ledCommandeError.SetId("Led Error");
 	_ledCommandeError.SetDefault(false);
 	SerialLog.LogTV("["+ propulsionCONTParams.id + "] Attached errorLed to pin :", propulsionCONTParams.errorLedPin);
-	_ledCommandeError.AttachToPin(propulsionCONTParams.errorLedPin);			// attache la pin 13 à l'objet led LedCommandeError
+	_ledCommandeError.AttachToPin(propulsionCONTParams.errorLedPin);			// attache la pin 13 ï¿½ l'objet led LedCommandeError
 
 	PropulsionLeftEngine.SetId("Controler left engine");
 	PropulsionLeftEngine.SetDefault();
@@ -142,16 +142,18 @@ void PropulsionCONTControler::ProportionalModule(	int enginePower,
 													int* rightEnginePower)
 //---------------------------------------------------------------------------------------------------------------------------------------
 {
-	// enginePower is % from 0 to 100
-
-	*leftEnginePower = enginePower;
-	*rightEnginePower = enginePower;
-
-	if (enginePower != 0)
+	if (enginePower == 0)
 	{
-		*leftEnginePower = enginePower + (turningAngle * proportionalMode * 2 / enginePower);
-		*rightEnginePower = enginePower - (turningAngle * proportionalMode * 2 / enginePower);
+		*leftEnginePower = 0;
+		*rightEnginePower = 0;
+		return;
 	}
+
+	int turningAdjustment = turningAngle * proportionalMode * 2 / 100;
+	if (enginePower < 0)
+		turningAdjustment = -turningAdjustment;
+	*leftEnginePower = constrain(enginePower + turningAdjustment, -100, 100);
+	*rightEnginePower = constrain(enginePower - turningAdjustment, -100, 100);
 }
 
 //---------------------------------------------------------------------------------------------------------------------------------------
@@ -161,6 +163,8 @@ void PropulsionCONTControler::ApplyProportionalPower(	int leftEnginePower,
 {
 	bool noErrorRight;
 	bool noErrorLeft;
+	leftEnginePower = constrain(leftEnginePower, -100, 100);
+	rightEnginePower = constrain(rightEnginePower, -100, 100);
 
 	// LEFT ENGINE
 	if (leftEnginePower > 0)
@@ -170,7 +174,7 @@ void PropulsionCONTControler::ApplyProportionalPower(	int leftEnginePower,
 	else
 		if (leftEnginePower < 0)
 		{
-			noErrorLeft = (PropulsionLeftEngine.TurnRight((leftEnginePower * MotorPositionAmplitude) / 100) == 0);
+			noErrorLeft = (PropulsionLeftEngine.TurnRight((abs(leftEnginePower) * MotorPositionAmplitude) / 100) == 0);
 		}
 		else
 		{
@@ -185,14 +189,14 @@ void PropulsionCONTControler::ApplyProportionalPower(	int leftEnginePower,
 	else
 		if (rightEnginePower < 0)
 		{
-			noErrorRight = (PropulsionRightEngine.TurnLeft((rightEnginePower * MotorPositionAmplitude) / 100) == 0);
+			noErrorRight = (PropulsionRightEngine.TurnLeft((abs(rightEnginePower) * MotorPositionAmplitude) / 100) == 0);
 		}
 		else
 		{
 			noErrorRight = (PropulsionRightEngine.Stop() == 0);
 		}
 
-	if (noErrorRight || noErrorLeft)
+	if (noErrorRight && noErrorLeft)
 	{
 		Ok();
 	}
@@ -206,10 +210,13 @@ void PropulsionCONTControler::ForwardEngine(int enginePower)
 	// enginePower is % from 0 to 100
 	// MotorPositionAmplitude is acceleration amplitude (ex:254 = 100%)
 
-	bool noErrorRight;
-	bool noErrorLeft;
 	int	leftEnginePower;
 	int	rightEnginePower;
+	if (enginePower < 0 || enginePower > 100)
+	{
+		ErrorValueOutOfRange();
+		return;
+	}
 
 	ProportionalModule(	enginePower,
 						_turningAngle,
@@ -226,10 +233,13 @@ void PropulsionCONTControler::ForwardEngine(int enginePower)
 void PropulsionCONTControler::ReverseEngine(int enginePower)
 //---------------------------------------------------------------------------------------------------------------------------------------
 {
-	bool noErrorRight;
-	bool noErrorLeft;
 	int	leftEnginePower;
 	int	rightEnginePower;
+	if (enginePower < 0 || enginePower > 100)
+	{
+		ErrorValueOutOfRange();
+		return;
+	}
 
 	ProportionalModule(-enginePower,
 						_turningAngle,
@@ -248,7 +258,7 @@ void PropulsionCONTControler::StopEngine()
 {
 	bool noErrorRight = (PropulsionRightEngine.Stop() == 0);
 	bool noErrorLeft = (PropulsionLeftEngine.Stop() == 0);
-	if (noErrorRight || noErrorLeft)
+	if (noErrorRight && noErrorLeft)
 	{
 		_enginePower = 0;
 		Ok();
@@ -260,6 +270,12 @@ void PropulsionCONTControler::StopEngine()
 void PropulsionCONTControler::TurnRight(int angle)
 //---------------------------------------------------------------------------------------------------------------------------------------
 {
+	if (angle < 0 || angle > DirectionAmplitude)
+	{
+		ErrorValueOutOfRange();
+		return;
+	}
+
 	int controlerPosition = DirectionAmplitude + angle;
 	if (PropulsionDirection.SetPosition(controlerPosition, false) == 0)
 	{
@@ -285,6 +301,12 @@ void PropulsionCONTControler::TurnRight(int angle)
 void PropulsionCONTControler::TurnLeft(int angle)
 //---------------------------------------------------------------------------------------------------------------------------------------
 {
+	if (angle < 0 || angle > DirectionAmplitude)
+	{
+		ErrorValueOutOfRange();
+		return;
+	}
+
 	int controlerPosition = DirectionAmplitude - angle;
 	if (PropulsionDirection.SetPosition(controlerPosition, false) == 0)
 	{
@@ -341,6 +363,12 @@ void PropulsionCONTControler::SetId(String id)
 void PropulsionCONTControler::SetProportionalMode(int proportionalMode)
 //---------------------------------------------------------------------------------------------------------------------------------------
 {
+	if (proportionalMode < 0 || proportionalMode > 5)
+	{
+		ErrorValueOutOfRange();
+		return;
+	}
+
 	_proportionalMode = proportionalMode;
 }
 

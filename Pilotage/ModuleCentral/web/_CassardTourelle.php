@@ -96,18 +96,25 @@
 					<!-- *******************************************           CURSEUR ELEVATION              ***************************************** -->
 					<!-- ****************************************************************************************************************************** -->
 					
-					<center><input type="range" id="ElevationSlider" data-orientation="vertical" min="0" max="30"></center>
+					<center><input type="range" id="ElevationSlider" data-orientation="vertical" min="0" max="60" value="0"></center>
 					
 					<script>
 						var $elementElevation = $('input[id="ElevationSlider"]');
-						
-						function updateElevation(val) 
+						var elevation = 0;
+						var azimuth = 0;
+
+						function sendTurretPosition()
 						{
-							Elevation = Math.abs(val);
 							if(ws && (ws.readyState == 1))
-							{			
-								ws.send("1,6,"+Elevation+",255"+"\r\n");
+							{
+								ws.send("1,4,"+azimuth+","+elevation+",255\r\n");
 							}
+						}
+
+						function updateElevation(val)
+						{
+							elevation = Number(val);
+							sendTurretPosition();
 						}
 
 						$elementElevation
@@ -129,18 +136,15 @@
 					<!--******************************************************************************************************************************* -->
 					<!-- *******************************************           CURSEUR AZIMUT              ***************************************** -->
 					<!-- ****************************************************************************************************************************** -->
-					<center><input type="range" id="AzimutSlider" data-orientation="horizontal" min="0" max="120"></center>
+					<center><input type="range" id="AzimutSlider" data-orientation="horizontal" min="0" max="180" value="0"></center>
 					
 					<script>
 						var $elementAzimut = $('input[id="AzimutSlider"]');
 			
 						function updateAzimut(val) 
 						{
-							Azimut = Math.abs(val);
-						  	if(ws && (ws.readyState == 1))
-							{				
-								ws.send("1,5,"+Azimut+",255"+"\r\n");
-							}
+							azimuth = Number(val);
+							sendTurretPosition();
 						}
 
 						$elementAzimut

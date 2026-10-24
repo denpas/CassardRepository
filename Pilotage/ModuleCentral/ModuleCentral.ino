@@ -1,112 +1,114 @@
 #include <Wire.h>
 #include "SPI.h"
 #include "Phpoc.h"
-#include "Protocol.h"
+#include <CassardControl/Protocol.h>
 
 PhpocServer server(80);
+const byte MaxCommandLength = 5;
 
-void setup() {
-  Wire.begin(); // join i2c bus (address optional for master)
+void setup()
+{
+  Wire.begin();
   Phpoc.begin(PF_LOG_SPI | PF_LOG_NET);
   server.beginWebSocket("_Cassard");
 }
 
-int moduleId = 2;
-String trame;
-int i;
-
-String getStringPartByNr(String data, char separator, int index)
+bool parseByteField(const String& frame, unsigned int& position, byte& value)
 {
-	// spliting a string and return the part nr index
-	// split by separator
+  const unsigned int length = frame.length();
+  if (position >= length || frame[position] < '0' || frame[position] > '9')
+    return false;
 
-	int stringData = 0;        //variable to count data part nr 
-	String dataPart = "";      //variable to hole the return text
+  unsigned int parsed = 0;
+  while (position < length && frame[position] >= '0' && frame[position] <= '9')
+  {
+    parsed = parsed * 10 + frame[position] - '0';
+    if (parsed > 255)
+      return false;
+    position++;
+  }
 
-	for (int i = 0; i<data.length() - 1; i++) {    //Walk through the text one letter at a time
-
-		if (data[i] == separator) {
-			//Count the number of times separator character appears in the text
-			stringData++;
-
-		}
-		else if (stringData == index) {
-			//get the text when separator is the rignt one
-			dataPart.concat(data[i]);
-
-		}
-		else if (stringData>index) {
-			//return text and stop if the next separator appears - to save CPU-time
-			return dataPart;
-			break;
-
-		}
-
-	}
-	//return text if this is the last part
-	return dataPart;
+  value = (byte)parsed;
+  return true;
 }
 
-void loop() 
+byte expectedCommandLength(const byte* command, byte fieldCount)
 {
-	PhpocClient client = server.available();
+  if (fieldCount < 3 || command[fieldCount - 1] != END_OF_TRAME)
+    return 0;
 
-	if (client) {
-		trame = client.readLine();
-		Wire.beginTransmission(moduleId);
-		for (i = 0; i<4; i++) {
-			Wire.write(char(getStringPartByNr(trame, ',', i).toInt()));
-		}
-		Wire.endTransmission();
-	}
-	/*
-	delay(1000);
-	delayInterCommandeMS = 2000;
+  if (command[0] == MODULE_TOURELLE &&
+      command[1] == TOURELLE_SETAZIMUTELEVATION)
+    return fieldCount == 5 && command[2] <= 180 && command[3] <= 60 ? 5 : 0;
 
-	for (proportionalMode = 0; proportionalMode < 6; proportionalMode++)
-	{
-		sendTrameToI2C("2,18," + String(proportionalMode, DEC) + ",255");			// Mode proportionnel de 0 ? 5
-		sendTrameToI2C("2,17,255");				// GoStraight
-		sendTrameToI2C("2,12,30,255");			// Vitesse 30*
+  if (command[0] == MODULE_PROPULSION)
+  {
+    if (command[1] == PROPULSION_STOPENGINE ||
+        command[1] == PROPULSION_GOSTRAIGHT)
+      return fieldCount == 3 ? 3 : 0;
+    if (command[1] == PROPULSION_FORWARDENGINE ||
+        command[1] == PROPULSION_REVERSEENGINE)
+      return fieldCount == 4 && command[2] <= 100 ? 4 : 0;
+    if (command[1] == PROPULSION_TURNRIGHT ||
+        command[1] == PROPULSION_TURNLEFT)
+      return fieldCount == 4 && command[2] <= 90 ? 4 : 0;
+    if (command[1] == PROPULSION_SETPROPORTIONALMODE)
+      return fieldCount == 4 && command[2] <= 5 ? 4 : 0;
+  }
 
-		delay(delayInterCommandeMS);			// 10s
-		sendTrameToI2C("2,15,30,255");			// droite de 30
-		delay(delayInterCommandeMS);			// 10s
-		sendTrameToI2C("2,15,60,255");			// droite de 60
-		delay(delayInterCommandeMS);			// 10s
+  return 0;
+}
 
-		sendTrameToI2C("2,17,255");				// GoStraight
-		delay(delayInterCommandeMS);			// 10s
-		sendTrameToI2C("2,16,30,255");			// gauche de 30
-		delay(delayInterCommandeMS);			// 10s
-		sendTrameToI2C("2,16,60,255");			// gauche de 60
-		delay(delayInterCommandeMS);			// 10s
+bool parseCommand(String frame, byte* command, byte& fieldCount)
+{
+  frame.trim();
+  if (frame.length() > 19)
+    return false;
 
-		sendTrameToI2C("2,17,255");				// GoStraight
-		delay(delayInterCommandeMS);			// 10s
+  fieldCount = 0;
+  unsigned int position = 0;
 
-												// MEME SEQUENCE MAIS AVEC VITESSE MAXI
+  while (position < frame.length())
+  {
+    if (fieldCount >= MaxCommandLength ||
+        !parseByteField(frame, position, command[fieldCount]))
+      return false;
+    fieldCount++;
 
-		sendTrameToI2C("2,12,100,255");			// Vitesse 100%
+    if (position == frame.length())
+      break;
+    if (frame[position] != ',')
+      return false;
+    position++;
+    if (position == frame.length())
+      return false;
+  }
 
-		delay(delayInterCommandeMS);			// 10s
-		sendTrameToI2C("2,15,30,255");			// droite de 30
-		delay(delayInterCommandeMS);			// 10s
-		sendTrameToI2C("2,15,60,255");			// droite de 60
-		delay(delayInterCommandeMS);			// 10s
+  if (fieldCount == 0 ||
+      (command[0] != MODULE_TOURELLE && command[0] != MODULE_PROPULSION) ||
+      expectedCommandLength(command, fieldCount) != fieldCount)
+    return false;
 
-		sendTrameToI2C("2,17,255");				// GoStraight
-		delay(delayInterCommandeMS);			// 10s
-		sendTrameToI2C("2,16,30,255");			// gauche de 30
-		delay(delayInterCommandeMS);			// 10s
-		sendTrameToI2C("2,16,60,255");			// gauche de 60
-		delay(delayInterCommandeMS);			// 10s
+  return true;
+}
 
-		sendTrameToI2C("2,17,255");				// GoStraight
-		delay(delayInterCommandeMS);			// 10s
+void forwardCommand(const byte* command, byte fieldCount)
+{
+  Wire.beginTransmission(command[0]);
+  for (byte field = 0; field < fieldCount; field++)
+    Wire.write(command[field]);
+  Wire.endTransmission();
+}
 
-		sendTrameToI2C("2,14,255");				// Stop
-		delay(2000);							// 20s
-	}
-	*/
+void loop()
+{
+  PhpocClient client = server.available();
+  if (!client)
+    return;
+
+  byte command[MaxCommandLength];
+  byte fieldCount;
+  String frame = client.readLine();
+  if (parseCommand(frame, command, fieldCount))
+    forwardCommand(command, fieldCount);
 }

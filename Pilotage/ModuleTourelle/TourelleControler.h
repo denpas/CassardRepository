@@ -1,9 +1,9 @@
 //#ifndef TourelleControler_h
 //#define TourelleControler_h
 
-#include <C:\Program Files (x86)\Arduino\hardware\arduino\avr\cores\arduino\Arduino.h>
-#include <LedControler.h>
-#include "ServoControler.h"
+#include <Arduino.h>
+#include <CassardControl/LedControler.h>
+#include <CassardControl/ServoControler.h>
 
 struct TourelleParams
 {
@@ -17,8 +17,6 @@ struct TourelleParams
 	int azimutSpeed;
 	int elevationSpeed;
 };
-
-bool unServoBouge;
 
 class TourelleControler
 {
@@ -50,7 +48,9 @@ class TourelleControler
 TourelleControler::TourelleControler()
 //---------------------------------------------------------------------------------------------------------------------------------------
 {
-
+	this->_moving = false;
+	this->_azimutLastPos = 0;
+	this->_elevationLastPos = 0;
 }
 
 //---------------------------------------------------------------------------------------------------------------------------------------
@@ -138,6 +138,12 @@ void TourelleControler::Setup(TourelleParams tourelleParams)
 void TourelleControler::GoToPos(int azimut, int elevation)
 //---------------------------------------------------------------------------------------------------------------------------------------
 {
+	if (azimut < 0 || azimut > 180 || elevation < 0 || elevation > 60)
+	{
+		ErrorValueOutOfRange();
+		return;
+	}
+
 	if (this->_TourelleElevation.SetPosition(elevation, false) == 0)
 	{
 		Ok();
