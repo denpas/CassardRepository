@@ -17,17 +17,18 @@ connexion WebSocket et les boutons de connexion et de retour au tableau de bord.
 
 ### 1. Connexion — `web/index.html`
 
-Page d'accueil avec les champs Identifiant et Mot de passe et le bouton
-« Accéder au tableau de bord ». Le formulaire transmet les données à
-`_CassardMenu.php`. **Ce formulaire n'authentifie pas l'utilisateur** : le code
-actuel ne vérifie ni l'identifiant ni le mot de passe; il enregistre seulement
-l'identifiant fourni dans la session.
+Page d'accueil avec le champ « Mot de passe de pilotage ». Le mot de passe
+n'est pas envoyé : le navigateur en dérive la clé de signature des commandes et
+la garde pour l'onglet en cours. Un mot de passe erroné est détecté à la
+connexion au navire (« Mot de passe refusé »). Voir [securite.md](./securite.md).
 
 ### 2. Tableau de bord — `web/_CassardMenu.php`
 
 Présente sous forme de cartes les accès à Propulsion & direction, Tourelle
 100 mm, Instruments, Sons & lumières et à la Console de diagnostic. Le lien
 « Configuration réseau » ouvre la page `setup_info.php` fournie par PHPoC.
+« Verrouiller » efface la clé de pilotage de l'onglet. Les pages de commande
+renvoient vers la connexion si aucune clé n'est présente.
 Lorsque PHPoC signale le mode `SETUP`, le tableau de bord affiche un avertissement
 à la place des modules.
 
@@ -93,7 +94,9 @@ n'est pas établie avant l'envoi.
 
 La connexion est établie séparément depuis chaque écran de commande. Le point
 WebSocket utilisé est `ws://<hôte>/_Cassard`, avec le sous-protocole
-`text.phpoc`. Un témoin signale l'état de la connexion; il ne confirme pas
+`text.phpoc`, via `_cassard-link.js` qui authentifie la liaison et signe chaque
+trame. Le témoin ne passe à « Connecté » qu'après acceptation du mot de passe
+par le navire; il ne confirme pas
 l'exécution d'une commande par un actionneur. Les messages et plages de
 commandes sont détaillés dans [protocole.md](./protocole.md).
 

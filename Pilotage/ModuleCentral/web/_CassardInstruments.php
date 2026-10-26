@@ -15,6 +15,8 @@
 		<link rel='stylesheet prefetch' href='_rangeslider.css'>
 		<link rel="stylesheet" href="style.css">
 		<link rel="stylesheet" href="app.css">
+		<script src="_cassard-link.js"></script>
+		<script>CassardLink.requireKey();</script>
 		
 		<script src='_gauge.min.js'></script>
 		<script src='_jquery.min.js'></script>
@@ -75,17 +77,7 @@
 			{
 				if(ws == null)
 				{
-					var ws_host_addr = "<?echo _SERVER("HTTP_HOST")?>";
-					var debug = document.getElementById("debug");
-					if((navigator.platform.indexOf("Win") != -1) && (ws_host_addr.charAt(0) == "["))
-					{
-						// network resource identifier to UNC path name conversion
-						ws_host_addr = ws_host_addr.replace(/[\[\]]/g, '');
-						ws_host_addr = ws_host_addr.replace(/:/g, "-");
-						ws_host_addr += ".ipv6-literal.net";
-					}
-					//debug.innerHTML = "<br>" + navigator.platform + " " + ws_host_addr;
-					ws = new WebSocket("ws://" + ws_host_addr + "/_Cassard", "text.phpoc");
+					ws = CassardLink.open();
 					document.getElementById("ws_state").textContent = "Connexion en cours…";
 					ws.onopen = ws_onopen;
 					ws.onclose = ws_onclose;

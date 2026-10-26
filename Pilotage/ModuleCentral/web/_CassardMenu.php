@@ -1,9 +1,4 @@
-<?php
-	session_start();
-	if (isset($_POST['identifiant'])) {
-		$_SESSION['identifiant'] = $_POST['identifiant'];
-	}
-?>
+<!doctype html>
 
 <html lang="fr">
 	<head>
@@ -11,11 +6,14 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<title>Centre de pilotage — Cassard</title>
 		<link rel="stylesheet" href="app.css">
+		<script src="_cassard-link.js"></script>
+		<script>CassardLink.requireKey();</script>
 	</head>
 	<body>
 		<header class="app-header">
 			<a class="brand" href="_CassardMenu.php"><span class="brand-mark">C</span>CASSARD <span class="eyebrow" style="color:#b9c9da">PILOTAGE</span></a>
 			<a class="header-menu" href="setup_info.php">Configuration réseau</a>
+			<a class="header-menu" href="index.html" onclick="CassardLink.forget();">Verrouiller</a>
 		</header>
 		<main class="page-shell">
 			<div class="eyebrow">Centre de commande</div>

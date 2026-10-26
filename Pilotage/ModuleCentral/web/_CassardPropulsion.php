@@ -14,6 +14,8 @@
 		<meta name="apple-mobile-web-app-capable" content="yes">
 		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 		<link rel="stylesheet" href="app.css">
+		<script src="_cassard-link.js"></script>
+		<script>CassardLink.requireKey();</script>
 	</head>
 	<body class="control-page helm-page">
 		<header class="app-header">
@@ -175,8 +177,7 @@
 			{
 				if(ws === null)
 				{
-					var host = "<?echo _SERVER("HTTP_HOST")?>";
-					ws = new WebSocket("ws://" + host + "/_Cassard", "text.phpoc");
+					ws = CassardLink.open();
 					setLinkState("Connexion…", false);
 					ws.onopen = function()
 					{

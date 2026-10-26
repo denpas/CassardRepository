@@ -15,6 +15,7 @@ Pilotage/
   ModulePropulsion/              Sketch de propulsion (I2C 2)
   ModuleTourelle/                Sketch de tourelle (I2C 1)
   libraries/CassardControl/      Bibliotheque Arduino partagee
+  tools/                         Generation de cle et tests d'authentification
   Archive/Legacy/                Anciens prototypes non maintenus
   docs/                          Protocole et deploiement
 ```
@@ -37,6 +38,8 @@ firmwares et les instructions de compilation/deploiement sont dans
 [docs/montage-et-deploiement.md](./docs/montage-et-deploiement.md).
 Le schema des composants et des flux est disponible dans
 [docs/architecture.md](./docs/architecture.md).
+La securisation du pilotage (mot de passe, trames signees, Wi-Fi et PHPoC) et
+sa mise en service sont decrites dans [docs/securite.md](./docs/securite.md).
 Les ecrans de pilotage et leurs limites sont decrits dans
 [docs/interface-pilotage.md](./docs/interface-pilotage.md); une video de
 simulation est disponible dans [docs/interface-pilotage-demo.mp4](./docs/interface-pilotage-demo.mp4).
@@ -61,7 +64,9 @@ au materiel PHPoC utilises, par exemple:
 arduino-cli compile --fqbn arduino:avr:uno --libraries Pilotage/libraries Pilotage/ModuleCentral
 ```
 
-Le central requiert la bibliotheque `Phpoc` fournie pour le materiel PHPoC.
+Le central requiert la bibliotheque `Phpoc` fournie pour le materiel PHPoC et
+le fichier `ModuleCentral/CassardSecret.h`, genere (hors Git) par
+`python3 Pilotage/tools/generer-cle-pilotage.py`.
 Verifier que la cible choisie correspond a la carte reelle: les commandes ci-
 dessus indiquent des profils d'exemple, pas une detection automatique du
 materiel. Televerser chaque sketch sur sa carte puis deployer le contenu de

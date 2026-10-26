@@ -5,6 +5,23 @@ termines par CRLF. Le central valide tous les champs avant de les convertir en
 octets et de les envoyer sur l'adresse I2C indiquee par le premier champ.
 Chaque octet `255` termine une trame I2C.
 
+## Authentification
+
+Depuis la sécurisation du pilotage, le central n'accepte que des trames signées.
+Le navigateur envoie d'abord `AUTH\r\n`; le central répond `NONCE,<32 hex>`.
+Chaque commande est ensuite transmise sous la forme :
+
+```text
+<trame>|<séquence>|<mac>\r\n
+2,12,60,255|2|3f9c0d1e5a7b8c42\r\n
+```
+
+La première trame signée est `PING`; le central répond `AUTH,OK` ou
+`AUTH,ERR`. Toute trame non signée, rejouée ou falsifiée reçoit `AUTH,ERR` et
+n'est pas transmise sur le bus I2C. Le détail du calcul est dans
+[securite.md](./securite.md). Les trames décrites ci-dessous correspondent à la
+partie `<trame>`.
+
 ## Format
 
 ```text
@@ -24,7 +41,7 @@ Les trames supportees sont:
 | Propulsion / 2 | 17 | Recentrer la direction | aucun | 3 octets |
 | Propulsion / 2 | 18 | Regler le mode proportionnel | niveau 0-5 | 4 octets |
 
-Exemples de messages WebSocket:
+Exemples de trames (avant signature):
 
 ```text
 1,4,120,25,255\r\n

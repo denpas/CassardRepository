@@ -1,7 +1,6 @@
 <?php
 	include_once "_config.php";
 	include_once "/lib/sc_envu.php";
-	session_start();
 ?>
 
 <!doctype html>
@@ -17,15 +16,29 @@
 	<main class="auth-card">
 		<div class="brand"><span class="brand-mark">C</span><span>CASSARD <span class="eyebrow">PILOTAGE</span></span></div>
 		<h1>Bienvenue à bord</h1>
-		<p>Connectez-vous à votre espace de pilotage.</p>
-		<form method="POST" action="_CassardMenu.php">
-			<label class="field-label" for="identifiant">Identifiant</label>
-			<input id="identifiant" type="text" name="identifiant" autocomplete="username" required>
-			<label class="field-label" for="motDePasse">Mot de passe</label>
-			<input id="motDePasse" type="password" name="motDePasse" autocomplete="current-password" required>
+		<p>Le mot de passe reste sur cet appareil : il sert à signer chaque commande envoyée au navire.</p>
+		<form id="login-form" action="#" autocomplete="off">
+			<label class="field-label" for="motDePasse">Mot de passe de pilotage</label>
+			<input id="motDePasse" type="password" autocomplete="current-password" minlength="12" required>
 			<button class="app-button" type="submit">Accéder au tableau de bord</button>
+			<p class="auth-footnote" id="login-status" role="status"></p>
 		</form>
 		<div class="auth-footnote">Interface locale de commande · Cassard</div>
 	</main>
+	<script src="_cassard-link.js"></script>
+	<script>
+		document.getElementById("login-form").addEventListener("submit", function(event)
+		{
+			event.preventDefault();
+			var field = document.getElementById("motDePasse");
+			document.getElementById("login-status").textContent = "Préparation de la clé…";
+			setTimeout(function()
+			{
+				CassardLink.storePassword(field.value);
+				field.value = "";
+				location.replace("_CassardMenu.php");
+			}, 20);
+		});
+	</script>
 </body>
 </html>
