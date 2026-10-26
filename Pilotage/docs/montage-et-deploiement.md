@@ -35,10 +35,20 @@ depuis les broches Arduino.
    actifs; `CassardControl` est une bibliotheque Arduino locale.
 3. Installer la bibliotheque PHPoC du fabricant pour le module central.
 4. Compiler et televerser `ModulePropulsion` et `ModuleTourelle` sur leurs cartes.
-5. Compiler `ModuleCentral` avec le profil de la carte PHPoC; televerser le
-   firmware puis copier le contenu de `ModuleCentral/web` sur le serveur Web.
-6. Depuis l'interface, connecter le WebSocket puis verifier d'abord les axes
-   sans charge mecanique et avec des limites physiques securisees.
+5. Generer la cle de pilotage (`python3 Pilotage/tools/generer-cle-pilotage.py`,
+   voir [securite.md](./securite.md)); elle cree `ModuleCentral/CassardSecret.h`,
+   non versionne et indispensable a la compilation du central.
+6. Compiler `ModuleCentral` avec le profil de la carte PHPoC; televerser le
+   firmware puis copier **tout** le contenu de `ModuleCentral/web` sur le serveur
+   Web (dont `_cassard-link.js` et `_cassard-trim.js`). Firmware central et pages
+   doivent etre mis a jour ensemble : le format des trames signees doit
+   correspondre des deux cotes.
+7. Proteger le Wi-Fi (WPA2) et les comptes PHPoC, comme decrit dans
+   [securite.md](./securite.md).
+8. Depuis l'interface, se connecter avec le mot de passe de pilotage, activer
+   POWER puis verifier d'abord les axes sans charge mecanique et avec des
+   limites physiques securisees : sens de rotation du servo d'azimut (90 = axe
+   du navire, au-dela de 90 = tribord) et course d'elevation jusqu'a 80°.
 
 Exemples Arduino CLI depuis la racine du depot:
 
@@ -55,8 +65,13 @@ les outils specifiques du fabricant.
 
 ## Depannage rapide
 
-- Une commande de tourelle doit etre `1,4,azimut,elevation,255` et aboutir a
-  l'adresse I2C 1.
+- Une commande de tourelle doit etre `1,4,azimut,elevation,255` (azimut 0-180,
+  l'interface envoie 30-150; elevation 0-80) et aboutir a l'adresse I2C 1.
+- Toutes les trames passent signees (`<trame>|<sequence>|<mac>`); dans la
+  console de diagnostic, saisir la trame seule, la page la signe. Si le temoin
+  affiche « Mot de passe refuse », la cle du navigateur ne correspond pas a
+  `CassardSecret.h` : verifier le mot de passe ou regenerer la cle et
+  televerser a nouveau le central.
 - Une commande de propulsion commence par `2` et aboutit a l'adresse I2C 2.
 - Verifier SDA/SCL, masses communes, adresses esclaves et alimentation avant de
   diagnostiquer un probleme logiciel.

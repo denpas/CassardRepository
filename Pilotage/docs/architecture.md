@@ -14,7 +14,8 @@ flowchart LR
     shared["Bibliotheque partagee<br/>CassardControl"]
 
     operator --> browser
-    browser -->|"WebSocket /_Cassard<br/>trames texte"| central
+    browser -->|"WebSocket /_Cassard<br/>trames texte signees"| central
+    central -.->|"NONCE, AUTH,OK / AUTH,ERR"| browser
     central -->|"I2C adresse 2<br/>commandes propulsion"| propulsion
     central -->|"I2C adresse 1<br/>position azimut/elevation"| turret
     propulsion --> propulsionActuators
@@ -25,9 +26,11 @@ flowchart LR
 ```
 
 Le navigateur ne commande pas directement les esclaves : il envoie des trames
-texte au serveur WebSocket PHPoC du module central. Le central valide les champs,
-convertit les valeurs en octets, puis choisit l'adresse I2C d'apres le numero du
-module. Les deux cartes esclaves n'ont pas de liaison reseau directe.
+texte signees au serveur WebSocket PHPoC du module central. Le central verifie
+la signature et la sequence de chaque trame, valide les champs, convertit les
+valeurs en octets, puis choisit l'adresse I2C d'apres le numero du module. Les
+deux cartes esclaves n'ont pas de liaison reseau directe. Le mecanisme
+d'authentification est decrit dans [securite.md](./securite.md).
 
 ## Flux d'une commande
 
@@ -40,8 +43,15 @@ sequenceDiagram
     participant Esclave as Module propulsion ou tourelle
     participant Actionneur as Moteur ou servo
 
+    Operateur->>Web: Saisit le mot de passe (cle derivee dans le navigateur)
+    Operateur->>Web: Active POWER
+    Web->>Central: AUTH
+    Central-->>Web: NONCE aleatoire
+    Web->>Central: PING signe
+    Central-->>Web: AUTH,OK (ou AUTH,ERR)
     Operateur->>Web: Modifie un controle
-    Web->>Central: Trame texte sur WebSocket
+    Web->>Central: Trame signee (charge, sequence, HMAC)
+    Central->>Central: Verifie signature et sequence (sinon AUTH,ERR, rien n'est transmis)
     Central->>Central: Valide module, commande, longueur et valeurs
     Central->>Bus: Envoie les octets avec le module comme adresse
     Bus->>Esclave: Livraison a l'adresse I2C
@@ -52,9 +62,12 @@ sequenceDiagram
 ## Responsabilites
 
 - **Interface web** (`ModuleCentral/web`) : expose les controles de propulsion et
-  de tourelle et emet les commandes via le WebSocket PHPoC.
-- **Module central** (`ModuleCentral/ModuleCentral.ino`) : maitre I2C; parse et
-  valide les trames entrantes puis les route vers l'adresse `1` ou `2`.
+  de tourelle, derive la cle de pilotage et emet les commandes signees via le
+  WebSocket PHPoC (`_cassard-link.js`).
+- **Module central** (`ModuleCentral/ModuleCentral.ino`, `CassardAuth.h`) :
+  maitre I2C; authentifie la session, verifie chaque trame, la valide puis la
+  route vers l'adresse `1` ou `2`. A chaque nouvelle session, il arrete le
+  moteur et recentre la barre.
 - **Module propulsion** (`ModulePropulsion`) : esclave `2`; commande les moteurs
   continus et le servo de direction.
 - **Module tourelle** (`ModuleTourelle`) : esclave `1`; commande les servos
@@ -68,7 +81,8 @@ service sont dans [montage-et-deploiement.md](./montage-et-deploiement.md).
 
 ## Sens des communications
 
-Le chemin fonctionnel documente est unidirectionnel : de l'interface vers le
-central puis vers l'esclave concerne. Le protocole I2C utilise actuellement
-n'envoie pas d'accuse de reception applicatif aux pages web; celles-ci ne
-connaissent donc pas l'etat reel d'un actionneur.
+Les commandes vont de l'interface vers le central puis vers l'esclave concerne.
+Le central ne repond au navigateur que pour l'authentification (`NONCE`,
+`AUTH,OK`, `AUTH,ERR`). Le protocole I2C n'envoie pas d'accuse de reception
+applicatif aux pages web; celles-ci ne connaissent donc pas l'etat reel d'un
+actionneur.

@@ -2,16 +2,28 @@
 
 Cette documentation décrit les écrans web du module central PHPoC. Les pages
 sont servies depuis `ModuleCentral/web` et utilisent la feuille de style
-commune `app.css`.
+commune `app.css`, ainsi que deux scripts partagés :
+
+- `_cassard-link.js` : liaison WebSocket authentifiée et signature des trames
+  (voir [securite.md](./securite.md)); fournit aussi le renvoi vers la page de
+  connexion quand aucune clé de pilotage n'est présente.
+- `_cassard-trim.js` : composant « trim » de radiocommande (levier strié,
+  rainure graduée, boutons de pas) utilisé par les écrans Propulsion et Tourelle.
 
 ## Identité visuelle et navigation
 
-L'interface utilise une barre bleu marine, des cartes claires, une accentuation
-bleu acier et des boutons ambre. Le module Propulsion & direction adopte un
-pupitre graphite inspiré d'une radiocommande physique, avec des commandes
-contrastées ambre et bleu. La mise en page s'adapte aux écrans étroits.
-L'en-tête des écrans de pilotage affiche le nom du module, un indicateur de
-connexion WebSocket et les boutons de connexion et de retour au tableau de bord.
+Les écrans de commande **Propulsion & direction** et **Tourelle 100 mm**
+reproduisent la face d'une radiocommande de modélisme : coque gris métal vissée,
+poignées caoutchouc, sérigraphies, accents orange, trims et interrupteur
+**POWER**. Ils sont conçus pour l'iPhone 16e en portrait (390 × 844 points,
+zones de sécurité comprises) et restent centrés sur un écran plus large. Leur
+en-tête sombre affiche le lien de retour au tableau de bord (logo CASSARD), le
+nom du module et le témoin de connexion; la liaison s'ouvre et se ferme avec
+l'interrupteur POWER.
+
+Les autres écrans (connexion, tableau de bord, instruments, sons & lumières,
+diagnostic) gardent la présentation en cartes claires sur barre bleu marine,
+avec un bouton « Connecter » dans l'en-tête des pages qui utilisent la liaison.
 
 ## Écrans
 
@@ -68,14 +80,17 @@ de sécurité. Une perte de connexion ne produit pas de commandes différées.
 Même coque et mêmes trims que le pupitre propulsion, au format iPhone 16e
 vertical (390 × 844), sans défilement : les deux vues se partagent la hauteur.
 
-- **Vue de dessus** (en haut), redessinée en SVG d'après le plan
-  `tourelle_vue_dessus.png` : l'avant du navire est en haut. On saisit la
+- **Vue de dessus** (en haut), redessinée en SVG d'après le plan de la
+  tourelle vue de dessus; le contour de la coque a été rendu symétrique par
+  rapport à l'axe du canon (le plan d'origine ne l'était pas), les détails
+  intérieurs (trappons, aérations) sont conservés. L'avant du navire est en haut. On saisit la
   tourelle au doigt ou à la souris et on la fait pivoter autour de son axe,
   de 60° à bâbord à 60° à tribord. Un cadran gradué (tous les 5°, repères à 0,
   30 et 60°) et un index orange indiquent l'azimut.
 - **Trim d'azimut** sous la vue de dessus : boutons BÂB / TRI (pas de 5°),
   levier à glisser, synchronisé avec la vue.
-- **Vue de profil** (en bas), d'après `tourelle_vue_profil.png` : on saisit le
+- **Vue de profil** (en bas), redessinée d'après le plan de profil (côté
+  gauche), le canon étant une pièce séparée : on saisit le
   canon et on l'incline autour de ses tourillons, de l'horizontale (0°) à 80°.
   Cadran gradué de 0 à 80° avec index orange.
 - **Trim d'élévation** vertical à droite de la vue de profil : boutons HAUT /
@@ -107,8 +122,9 @@ son ou d'éclairage n'est implémentée dans cet écran.
 
 ### 7. Console de diagnostic — `web/_CassardDebug.php`
 
-Permet de saisir une trame brute, de l'envoyer sur la connexion WebSocket active
-et d'effacer l'historique des trames envoyées. L'écran signale si la connexion
+Permet de saisir une trame brute (par exemple `2,14,255`), de l'envoyer sur la
+connexion active — la page la signe automatiquement — et d'effacer l'historique
+des trames envoyées. L'écran signale si la connexion
 n'est pas établie avant l'envoi.
 
 ## Connexion et limites fonctionnelles
@@ -121,7 +137,14 @@ par le navire; il ne confirme pas
 l'exécution d'une commande par un actionneur. Les messages et plages de
 commandes sont détaillés dans [protocole.md](./protocole.md).
 
-## Dossier de commande
+## Fichiers de présentation (antérieurs à la refonte)
+
+La présentation et la vidéo ci-dessous datent d'avant la refonte des écrans
+Propulsion et Tourelle et la sécurisation de la liaison : elles montrent
+l'ancien pupitre (joystick en perspective, curseurs) et l'ancienne page de
+connexion. Les scripts de génération n'ont pas encore été mis à jour.
+
+### Dossier de commande
 
 La présentation générale 16:9 est disponible dans
 [Dossier commande.pptx](./Dossier%20commande.pptx). Elle
@@ -134,7 +157,7 @@ Pour régénérer la présentation après modification de ces informations :
 python3 Pilotage/docs/generate-dossier-commande.py
 ```
 
-## Simulation vidéo
+### Simulation vidéo
 
 [Voir la simulation de l'interface (MP4)](./interface-pilotage-demo.mp4).
 Cette vidéo est une maquette visuelle de parcours : elle montre les sept écrans,
