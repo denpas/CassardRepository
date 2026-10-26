@@ -9,101 +9,144 @@
 	<head>
 		<meta charset="UTF-8">
 		<title>Propulsion &amp; direction — Cassard</title>
-		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+		<meta name="theme-color" content="#101215">
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 		<link rel="stylesheet" href="app.css">
 	</head>
 	<body class="control-page helm-page">
 		<header class="app-header">
-			<a class="brand" href="_CassardMenu.php"><span class="brand-mark">C</span>CASSARD <span class="eyebrow" style="color:#b9c9da">PILOTAGE</span></a>
+			<a class="brand" href="_CassardMenu.php"><span class="brand-mark">C</span>CASSARD</a>
 			<div class="header-title">Propulsion &amp; direction</div>
-			<div class="header-actions">
-				<span class="connection-status" id="ws_state" aria-live="polite">Non connecté</span>
-				<button class="app-button" id="bt_connect" type="button">Connecter</button>
-			</div>
+			<span class="connection-status" id="ws_state" aria-live="polite">Non connecté</span>
 		</header>
 
-		<main class="helm-layout">
-			<section class="helm-center" aria-label="Commande principale">
-				<div class="helm-instructions">
-					<div>
-						<div class="eyebrow">Commande combinée</div>
-						<h1>Maintenez le joystick dans la direction souhaitée</h1>
+		<main class="tx" aria-label="Radiocommande de propulsion">
+			<div class="tx-antenna" aria-hidden="true"><span></span><i></i></div>
+
+			<div class="tx-body">
+				<span class="tx-screw tx-screw-tl" aria-hidden="true"></span>
+				<span class="tx-screw tx-screw-tr" aria-hidden="true"></span>
+				<span class="tx-screw tx-screw-bl" aria-hidden="true"></span>
+				<span class="tx-screw tx-screw-br" aria-hidden="true"></span>
+
+				<div class="tx-top" aria-hidden="true">
+					<div class="tx-toggle">
+						<span class="tx-print">AUX 1</span>
+						<span class="tx-toggle-lever"></span>
 					</div>
-					<span class="helm-live-value" id="joystick-state" aria-live="polite">Neutre</span>
+					<div class="tx-brand">
+						<span class="tx-brand-badge">CASSARD</span>
+						<div class="tx-brand-model">
+							<span class="tx-grille"></span>
+							<strong>D61<span>4</span></strong>
+							<span class="tx-led" id="tx-led"></span>
+						</div>
+					</div>
+					<div class="tx-toggle tx-toggle-right">
+						<span class="tx-print">AUX 2</span>
+						<span class="tx-toggle-lever"></span>
+					</div>
 				</div>
 
-				<div class="joystick-frame">
-					<div class="joystick-axis-label joystick-forward">AVANT</div>
-					<div class="joystick-axis-label joystick-backward">ARRIÈRE</div>
-					<canvas
-						id="joystick"
-						class="joystick-canvas"
-						width="680"
-						height="400"
-						tabindex="0"
-						role="application"
-						aria-label="Joystick en perspective. Déplacez-le à la souris, au toucher ou avec les flèches du clavier. Le relâcher arrête le moteur et recentre la direction."
-					></canvas>
-					<div class="joystick-hint">Glisser pour piloter · relâcher pour arrêter et recentrer</div>
+				<div class="tx-sticks">
+					<div class="tx-gimbal">
+						<span class="tx-print tx-axis tx-axis-top" aria-hidden="true">Avant</span>
+						<canvas
+							id="joystick"
+							class="joystick-canvas"
+							width="300"
+							height="300"
+							tabindex="0"
+							role="application"
+							aria-label="Manche vu de dessus. Haut / bas : puissance moteur, gauche / droite : direction. Le relâcher arrête le moteur et recentre la direction. Flèches du clavier pour ajuster, espace pour revenir au neutre."
+						></canvas>
+						<span class="tx-print tx-axis tx-axis-bottom" aria-hidden="true">Arrière</span>
+					</div>
+
+					<div class="trim trim-vertical" id="throttle-trim">
+						<button class="trim-step trim-step-up" type="button" data-step="5" aria-label="Augmenter la puissance">AV</button>
+						<div class="trim-track" tabindex="0" role="slider" aria-orientation="vertical" aria-label="Puissance moteur, arrière à avant">
+							<div class="trim-slot"></div>
+							<div class="trim-rail"><i class="trim-fill"></i><span class="trim-lever"></span></div>
+						</div>
+						<button class="trim-step trim-step-down" type="button" data-step="-5" aria-label="Diminuer la puissance">AR</button>
+					</div>
+
+					<div class="trim trim-horizontal" id="rudder-trim">
+						<button class="trim-step trim-step-left" type="button" data-step="-5" aria-label="Barre à bâbord">BÂB</button>
+						<div class="trim-track" tabindex="0" role="slider" aria-orientation="horizontal" aria-label="Direction du gouvernail, bâbord à tribord">
+							<div class="trim-slot"></div>
+							<div class="trim-rail"><i class="trim-fill"></i><span class="trim-lever"></span></div>
+						</div>
+						<button class="trim-step trim-step-right" type="button" data-step="5" aria-label="Barre à tribord">TRI</button>
+					</div>
+
+					<div class="tx-corner" aria-hidden="true">
+						<span class="tx-print">Mode</span>
+						<span class="tx-corner-readout">2</span>
+					</div>
 				</div>
 
-				<section class="helm-control helm-throttle" aria-labelledby="throttle-title">
-					<div class="helm-control-heading">
-						<div>
-							<h2 id="throttle-title">Puissance moteur</h2>
-							<p>Marche arrière <span>−100 %</span> · avant <span>+100 %</span></p>
+				<div class="tx-power">
+					<span class="tx-power-label">POWER</span>
+					<button class="tx-power-switch" id="bt_connect" type="button" role="switch" aria-checked="false" aria-label="Liaison avec le navire"></button>
+					<span class="tx-print">Liaison</span>
+				</div>
+
+				<div class="tx-lcd-row">
+					<div class="tx-bars" id="tx-bars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+					<div class="tx-lcd">
+						<div class="tx-lcd-glass">
+							<div class="lcd-row-title"><span>CASSARD D614</span><span id="lcd-link">----</span></div>
+							<div class="lcd-row">
+								<span class="lcd-label">MOT</span>
+								<span class="lcd-bar"><i id="lcd-power-bar"></i></span>
+								<output class="lcd-value" id="power-value" aria-live="polite">0%</output>
+							</div>
+							<div class="lcd-row">
+								<span class="lcd-label">DIR</span>
+								<span class="lcd-bar"><i id="lcd-direction-bar"></i></span>
+								<output class="lcd-value" id="direction-value" aria-live="polite">0°</output>
+							</div>
+							<div class="lcd-row">
+								<span class="lcd-label">REA</span>
+								<span class="lcd-bar lcd-bar-level"><i id="lcd-proportion-bar"></i></span>
+								<output class="lcd-value" id="proportion-value">N0</output>
+							</div>
 						</div>
-						<output class="helm-value" id="power-value" for="PuissanceSlider">0 % · arrêt</output>
 					</div>
-					<div class="helm-slider-wrap">
-						<span class="helm-end-label">−100</span>
-						<input id="PuissanceSlider" class="helm-range helm-range-horizontal" type="range" min="-100" max="100" value="0" aria-label="Puissance moteur, arrière à avant">
-						<span class="helm-end-label">+100</span>
+					<div class="tx-roller" id="ProportionRoller" tabindex="0" role="slider" aria-orientation="vertical" aria-label="Réactivité moteur" aria-valuemin="0" aria-valuemax="5" aria-valuenow="0">
+						<span class="tx-roller-drum"></span>
+						<button type="button" data-step="1" tabindex="-1" aria-label="Réactivité plus"></button>
+						<button type="button" data-step="-1" tabindex="-1" aria-label="Réactivité moins"></button>
 					</div>
-					<div class="helm-range-center" aria-hidden="true"><span>ARRIÈRE</span><span>NEUTRE</span><span>AVANT</span></div>
-				</section>
+				</div>
 
-				<section class="helm-proportion" aria-label="Réactivité de la propulsion">
-					<label for="ProportionSlider">Réactivité moteur</label>
-					<span class="helm-proportion-value" id="proportion-value">Niveau 0</span>
-					<input id="ProportionSlider" type="range" min="0" max="5" value="0" aria-label="Réactivité du moteur">
-				</section>
-			</section>
-
-			<aside class="helm-side">
-				<section class="helm-control helm-steering" aria-labelledby="steering-title">
-					<div class="helm-control-heading">
-						<div>
-							<div class="eyebrow">Gouvernail</div>
-							<h2 id="steering-title">Direction</h2>
-						</div>
-						<output class="helm-value" id="direction-value" for="DirectionSlider">0° · axe central</output>
-					</div>
-					<div class="helm-steering-scale helm-steering-positive" aria-hidden="true"><span>TRIBORD</span><span>+90°</span></div>
-					<input id="DirectionSlider" class="helm-range helm-range-vertical" type="range" min="-90" max="90" value="0" aria-label="Direction du gouvernail, bâbord à tribord">
-					<div class="helm-steering-scale helm-steering-negative" aria-hidden="true"><span>−90°</span><span>BÂBORD</span></div>
-					<p class="helm-steering-help">Axe horizontal du joystick</p>
-				</section>
-
-				<section class="helm-mode">
-					<span class="helm-mode-dot" aria-hidden="true"></span>
-					<div>
-						<strong>Mode de pilotage</strong>
-						<span>Joystick + curseurs synchronisés</span>
-					</div>
-				</section>
-			</aside>
+				<div class="tx-footer" aria-hidden="true">
+					<span class="tx-print">6 voies · 2,4 GHz Wi-Fi</span>
+					<span class="tx-print">Frégate anti-aérienne · 1/100</span>
+				</div>
+			</div>
 		</main>
 
 		<script>
 			var ws = null;
 			var power = 0;
 			var direction = 0;
+			var proportion = 0;
 			var joystickPointer = null;
 			var joystickView = { x: 0, y: 0 };
 			var commandTimer = null;
 			var canvas = document.getElementById("joystick");
 			var canvasContext = canvas.getContext("2d");
+			var staticLayer = document.createElement("canvas");
+			var JOYSTICK_SIZE = 300;
+			var JOYSTICK_CENTER = 150;
+			var WELL_RADIUS = 104;
+			var KNOB_RADIUS = 40;
+			var JOYSTICK_TRAVEL = WELL_RADIUS - KNOB_RADIUS - 4;
 
 			function sendCommand(command, value)
 			{
@@ -118,30 +161,35 @@
 				}
 			}
 
+			function setLinkState(label, connected)
+			{
+				document.getElementById("ws_state").textContent = label;
+				document.getElementById("ws_state").classList.toggle("connected", connected);
+				document.getElementById("bt_connect").setAttribute("aria-checked", ws !== null ? "true" : "false");
+				document.getElementById("tx-led").classList.toggle("on", connected);
+				document.getElementById("tx-bars").classList.toggle("on", connected);
+				document.getElementById("lcd-link").textContent = connected ? "LINK" : "----";
+			}
+
 			function connect_onclick()
 			{
 				if(ws === null)
 				{
 					var host = "<?echo _SERVER("HTTP_HOST")?>";
 					ws = new WebSocket("ws://" + host + "/_Cassard", "text.phpoc");
-					document.getElementById("ws_state").textContent = "Connexion en cours…";
+					setLinkState("Connexion…", false);
 					ws.onopen = function()
 					{
-						document.getElementById("ws_state").textContent = "Connecté";
-						document.getElementById("ws_state").classList.add("connected");
-						document.getElementById("bt_connect").textContent = "Déconnecter";
+						setLinkState("Connecté", true);
 					};
 					ws.onclose = function()
 					{
-						document.getElementById("ws_state").textContent = "Non connecté";
-						document.getElementById("ws_state").classList.remove("connected");
-						document.getElementById("bt_connect").textContent = "Connecter";
 						ws = null;
+						setLinkState("Non connecté", false);
 					};
 					ws.onerror = function()
 					{
-						document.getElementById("ws_state").textContent = "Erreur de connexion";
-						document.getElementById("ws_state").classList.remove("connected");
+						setLinkState("Erreur de connexion", false);
 					};
 				}
 				else
@@ -150,117 +198,468 @@
 				}
 			}
 
+			// ---------- Manche vu de dessus ----------
+
+			function roundedRectPath(context, x, y, width, height, radius)
+			{
+				context.beginPath();
+				context.moveTo(x + radius, y);
+				context.arcTo(x + width, y, x + width, y + height, radius);
+				context.arcTo(x + width, y + height, x, y + height, radius);
+				context.arcTo(x, y + height, x, y, radius);
+				context.arcTo(x, y, x + width, y, radius);
+				context.closePath();
+			}
+
+			function metalGradient(context, radius)
+			{
+				var stops = ["#f5f7f8", "#9aa1a7", "#e6e9ec", "#868c92", "#f1f3f5", "#9ba2a8", "#dfe3e6", "#80868c", "#f5f7f8"];
+				var gradient;
+				if(context.createConicGradient)
+				{
+					gradient = context.createConicGradient(-Math.PI / 3, JOYSTICK_CENTER, JOYSTICK_CENTER);
+				}
+				else
+				{
+					gradient = context.createLinearGradient(JOYSTICK_CENTER - radius, JOYSTICK_CENTER - radius, JOYSTICK_CENTER + radius, JOYSTICK_CENTER + radius);
+				}
+				for(var i = 0; i < stops.length; i++)
+				{
+					gradient.addColorStop(i / (stops.length - 1), stops[i]);
+				}
+				return gradient;
+			}
+
+			function drawScrew(context, x, y)
+			{
+				var gradient = context.createRadialGradient(x - 2, y - 2, 1, x, y, 7);
+				gradient.addColorStop(0, "#eef0f2");
+				gradient.addColorStop(0.7, "#8a9096");
+				gradient.addColorStop(1, "#4b5055");
+				context.fillStyle = gradient;
+				context.beginPath();
+				context.arc(x, y, 7, 0, Math.PI * 2);
+				context.fill();
+				context.strokeStyle = "rgba(0,0,0,0.6)";
+				context.lineWidth = 1;
+				context.stroke();
+				context.strokeStyle = "#2a2d30";
+				context.lineWidth = 1.6;
+				context.beginPath();
+				context.moveTo(x - 4, y - 1.5);
+				context.lineTo(x + 4, y + 1.5);
+				context.moveTo(x - 1.5, y + 4);
+				context.lineTo(x + 1.5, y - 4);
+				context.stroke();
+			}
+
+			function drawStaticLayer(context)
+			{
+				var c = JOYSTICK_CENTER;
+
+				// Platine noire à coins arrondis, vissée
+				var plate = context.createLinearGradient(0, 0, 0, JOYSTICK_SIZE);
+				plate.addColorStop(0, "#3c3f43");
+				plate.addColorStop(1, "#141517");
+				roundedRectPath(context, 2, 2, 296, 296, 36);
+				context.fillStyle = plate;
+				context.fill();
+				context.strokeStyle = "rgba(255,255,255,0.18)";
+				context.lineWidth = 1.5;
+				context.stroke();
+
+				roundedRectPath(context, 12, 12, 276, 276, 28);
+				var inset = context.createLinearGradient(0, 12, 0, 288);
+				inset.addColorStop(0, "#111214");
+				inset.addColorStop(1, "#26282b");
+				context.fillStyle = inset;
+				context.fill();
+
+				drawScrew(context, 30, 30);
+				drawScrew(context, 270, 30);
+				drawScrew(context, 30, 270);
+				drawScrew(context, 270, 270);
+
+				// Graduations sérigraphiées sur la platine
+				context.strokeStyle = "rgba(233,237,240,0.42)";
+				context.lineCap = "butt";
+				for(var degree = 0; degree < 360; degree += 5)
+				{
+					var angle = degree * Math.PI / 180;
+					var isMajor = degree % 45 === 0;
+					var isMedium = degree % 15 === 0;
+					var inner = 133;
+					var outer = isMajor ? 142 : (isMedium ? 139 : 136);
+					context.lineWidth = isMajor ? 1.6 : 0.9;
+					context.beginPath();
+					context.moveTo(c + Math.cos(angle) * inner, c + Math.sin(angle) * inner);
+					context.lineTo(c + Math.cos(angle) * outer, c + Math.sin(angle) * outer);
+					context.stroke();
+				}
+
+				// Bague aluminium brossé
+				context.shadowColor = "rgba(0,0,0,0.7)";
+				context.shadowBlur = 8;
+				context.shadowOffsetY = 3;
+				context.fillStyle = metalGradient(context, 130);
+				context.beginPath();
+				context.arc(c, c, 129, 0, Math.PI * 2);
+				context.fill();
+				context.shadowColor = "transparent";
+
+				context.strokeStyle = "rgba(255,255,255,0.08)";
+				context.lineWidth = 0.6;
+				for(var groove = WELL_RADIUS + 3; groove < 128; groove += 2.2)
+				{
+					context.beginPath();
+					context.arc(c, c, groove, 0, Math.PI * 2);
+					context.stroke();
+				}
+				context.strokeStyle = "rgba(0,0,0,0.45)";
+				context.lineWidth = 1;
+				context.beginPath();
+				context.arc(c, c, 129, 0, Math.PI * 2);
+				context.stroke();
+
+				// Quatre repères encastrés de la bague (N, E, S, O)
+				for(var mark = 0; mark < 4; mark++)
+				{
+					context.save();
+					context.translate(c, c);
+					context.rotate(mark * Math.PI / 2);
+					roundedRectPath(context, -4.5, -127, 9, 17, 3);
+					context.fillStyle = "#2b2e31";
+					context.fill();
+					roundedRectPath(context, -2.4, -125, 4.8, 13, 2);
+					var tab = context.createLinearGradient(-2.4, 0, 2.4, 0);
+					tab.addColorStop(0, "#9ca2a8");
+					tab.addColorStop(0.5, "#f4f6f7");
+					tab.addColorStop(1, "#8a9096");
+					context.fillStyle = tab;
+					context.fill();
+					context.restore();
+				}
+
+				// Puits et soufflet en caoutchouc noir
+				var well = context.createRadialGradient(c, c, 10, c, c, WELL_RADIUS);
+				well.addColorStop(0, "#2a2c2f");
+				well.addColorStop(0.55, "#121315");
+				well.addColorStop(0.92, "#050506");
+				well.addColorStop(1, "#000");
+				context.fillStyle = well;
+				context.beginPath();
+				context.arc(c, c, WELL_RADIUS, 0, Math.PI * 2);
+				context.fill();
+				context.strokeStyle = "rgba(255,255,255,0.12)";
+				context.lineWidth = 1;
+				context.stroke();
+
+				for(var fold = 34; fold < WELL_RADIUS - 6; fold += 11)
+				{
+					context.strokeStyle = "rgba(255,255,255,0.055)";
+					context.lineWidth = 2;
+					context.beginPath();
+					context.arc(c, c, fold, Math.PI * 1.05, Math.PI * 1.75);
+					context.stroke();
+					context.strokeStyle = "rgba(0,0,0,0.5)";
+					context.lineWidth = 1;
+					context.beginPath();
+					context.arc(c, c, fold + 2, 0, Math.PI * 2);
+					context.stroke();
+				}
+
+				// Croix de course du cardan
+				context.strokeStyle = "rgba(255,255,255,0.07)";
+				context.lineWidth = 1;
+				context.setLineDash([3, 4]);
+				context.beginPath();
+				context.moveTo(c - JOYSTICK_TRAVEL, c);
+				context.lineTo(c + JOYSTICK_TRAVEL, c);
+				context.moveTo(c, c - JOYSTICK_TRAVEL);
+				context.lineTo(c, c + JOYSTICK_TRAVEL);
+				context.stroke();
+				context.setLineDash([]);
+			}
+
+			function drawKnob(context, knobX, knobY, x, y)
+			{
+				var c = JOYSTICK_CENTER;
+
+				// Axe visible quand le manche est incliné
+				var shaft = context.createLinearGradient(c, c, knobX, knobY);
+				shaft.addColorStop(0, "#3d4145");
+				shaft.addColorStop(1, "#b9bec3");
+				context.strokeStyle = shaft;
+				context.lineCap = "round";
+				context.lineWidth = 12;
+				context.beginPath();
+				context.moveTo(c, c);
+				context.lineTo(knobX, knobY);
+				context.stroke();
+
+				var collar = context.createRadialGradient(c - 5, c - 5, 2, c, c, 20);
+				collar.addColorStop(0, "#55595e");
+				collar.addColorStop(1, "#0d0e0f");
+				context.fillStyle = collar;
+				context.beginPath();
+				context.arc(c, c, 18, 0, Math.PI * 2);
+				context.fill();
+
+				// Ombre portée
+				context.save();
+				context.shadowColor = "rgba(0,0,0,0.75)";
+				context.shadowBlur = 16;
+				context.shadowOffsetX = 6 + x * 4;
+				context.shadowOffsetY = 9 - y * 4;
+				context.fillStyle = "#6d7379";
+				context.beginPath();
+				context.arc(knobX, knobY, KNOB_RADIUS, 0, Math.PI * 2);
+				context.fill();
+				context.restore();
+
+				// Couronne moletée (losanges)
+				var knurlBase = context.createLinearGradient(knobX - KNOB_RADIUS, knobY - KNOB_RADIUS, knobX + KNOB_RADIUS, knobY + KNOB_RADIUS);
+				knurlBase.addColorStop(0, "#e2e5e8");
+				knurlBase.addColorStop(0.5, "#959ca2");
+				knurlBase.addColorStop(1, "#4f555a");
+				context.fillStyle = knurlBase;
+				context.beginPath();
+				context.arc(knobX, knobY, KNOB_RADIUS, 0, Math.PI * 2);
+				context.fill();
+
+				var inner = 30;
+				var teeth = 84;
+				for(var i = 0; i < teeth; i++)
+				{
+					var angle = i * Math.PI * 2 / teeth;
+					var twist = 0.07;
+					context.strokeStyle = "rgba(0,0,0,0.42)";
+					context.lineWidth = 0.9;
+					context.beginPath();
+					context.moveTo(knobX + Math.cos(angle) * inner, knobY + Math.sin(angle) * inner);
+					context.lineTo(knobX + Math.cos(angle + twist) * (KNOB_RADIUS - 0.5), knobY + Math.sin(angle + twist) * (KNOB_RADIUS - 0.5));
+					context.moveTo(knobX + Math.cos(angle) * inner, knobY + Math.sin(angle) * inner);
+					context.lineTo(knobX + Math.cos(angle - twist) * (KNOB_RADIUS - 0.5), knobY + Math.sin(angle - twist) * (KNOB_RADIUS - 0.5));
+					context.stroke();
+				}
+				context.strokeStyle = "rgba(0,0,0,0.55)";
+				context.lineWidth = 1;
+				context.beginPath();
+				context.arc(knobX, knobY, KNOB_RADIUS, 0, Math.PI * 2);
+				context.stroke();
+
+				// Chanfrein
+				var chamfer = context.createLinearGradient(knobX - inner, knobY - inner, knobX + inner, knobY + inner);
+				chamfer.addColorStop(0, "#ffffff");
+				chamfer.addColorStop(1, "#5f656a");
+				context.strokeStyle = chamfer;
+				context.lineWidth = 2.5;
+				context.beginPath();
+				context.arc(knobX, knobY, inner, 0, Math.PI * 2);
+				context.stroke();
+
+				// Calotte usinée
+				var cap = context.createRadialGradient(knobX - 9 - x * 4, knobY - 11 + y * 4, 2, knobX, knobY, inner);
+				cap.addColorStop(0, "#ffffff");
+				cap.addColorStop(0.45, "#d5dadd");
+				cap.addColorStop(1, "#8f969c");
+				context.fillStyle = cap;
+				context.beginPath();
+				context.arc(knobX, knobY, inner - 1.3, 0, Math.PI * 2);
+				context.fill();
+
+				for(var ring = 4; ring < inner - 2; ring += 2.6)
+				{
+					context.strokeStyle = ring % 5.2 < 2.6 ? "rgba(255,255,255,0.22)" : "rgba(0,0,0,0.06)";
+					context.lineWidth = 0.7;
+					context.beginPath();
+					context.arc(knobX, knobY, ring, 0, Math.PI * 2);
+					context.stroke();
+				}
+
+				context.fillStyle = "rgba(255,255,255,0.65)";
+				context.beginPath();
+				context.ellipse(knobX - 10, knobY - 12, 9, 4.5, -0.7, 0, Math.PI * 2);
+				context.fill();
+
+				// Petites rayures d'usage
+				context.strokeStyle = "rgba(60,64,68,0.25)";
+				context.lineWidth = 0.6;
+				context.beginPath();
+				context.moveTo(knobX + 6, knobY - 15);
+				context.lineTo(knobX + 13, knobY - 9);
+				context.moveTo(knobX - 14, knobY + 8);
+				context.lineTo(knobX - 9, knobY + 12);
+				context.stroke();
+			}
+
 			function renderJoystick(x, y)
 			{
 				var context = canvasContext;
 				var bounds = canvas.getBoundingClientRect();
 				var pixelRatio = window.devicePixelRatio || 1;
-				var pixelWidth = Math.max(1, Math.round(bounds.width * pixelRatio));
-				var pixelHeight = Math.max(1, Math.round(bounds.height * pixelRatio));
-				if(canvas.width !== pixelWidth || canvas.height !== pixelHeight)
+				var size = Math.max(1, Math.round(bounds.width * pixelRatio));
+				if(canvas.width !== size || canvas.height !== size || staticLayer.width !== size)
 				{
-					canvas.width = pixelWidth;
-					canvas.height = pixelHeight;
+					canvas.width = size;
+					canvas.height = size;
+					staticLayer.width = size;
+					staticLayer.height = size;
+					var staticContext = staticLayer.getContext("2d");
+					staticContext.setTransform(size / JOYSTICK_SIZE, 0, 0, size / JOYSTICK_SIZE, 0, 0);
+					drawStaticLayer(staticContext);
 				}
-				var scaleX = canvas.width / 680;
-				var scaleY = canvas.height / 400;
-				var tiltX = x * 105;
-				var tiltY = -y * 76;
-				context.setTransform(scaleX, 0, 0, scaleY, 0, 0);
-				context.clearRect(0, 0, 680, 400);
-
-				context.save();
-				context.translate(340, 225);
-				context.scale(1, 0.36);
-				var baseGradient = context.createLinearGradient(0, -120, 0, 120);
-				baseGradient.addColorStop(0, "#ffffff");
-				baseGradient.addColorStop(0.55, "#dce7f0");
-				baseGradient.addColorStop(1, "#aebfce");
-				context.fillStyle = baseGradient;
-				context.beginPath();
-				context.arc(0, 0, 210, 0, Math.PI * 2);
-				context.fill();
-				context.strokeStyle = "#9eafbf";
-				context.lineWidth = 4;
-				context.stroke();
-				context.restore();
-
-				context.save();
-				context.translate(340, 225);
-				context.scale(1, 0.36);
-				context.strokeStyle = "rgba(36,116,166,0.16)";
-				context.lineWidth = 2;
-				for(var ring = 1; ring <= 3; ring++)
-				{
-					context.beginPath();
-					context.arc(0, 0, ring * 48, 0, Math.PI * 2);
-					context.stroke();
-				}
-				context.beginPath();
-				context.moveTo(-155, 0);
-				context.lineTo(155, 0);
-				context.moveTo(0, -145);
-				context.lineTo(0, 145);
-				context.stroke();
-				context.restore();
-
-				context.fillStyle = "rgba(16,35,63,0.18)";
-				context.beginPath();
-				context.ellipse(340 + tiltX, 235 + tiltY, 62, 23, 0, 0, Math.PI * 2);
-				context.fill();
-
-				var pivotX = 340 + tiltX;
-				var pivotY = 210 + tiltY;
-				context.lineCap = "round";
-				context.strokeStyle = "#8398aa";
-				context.lineWidth = 29;
-				context.beginPath();
-				context.moveTo(340, 220);
-				context.lineTo(pivotX, pivotY);
-				context.stroke();
-				context.strokeStyle = "#f9fbfd";
-				context.lineWidth = 19;
-				context.beginPath();
-				context.moveTo(340, 220);
-				context.lineTo(pivotX, pivotY);
-				context.stroke();
-
-				var knobX = pivotX;
-				var knobY = pivotY - 78;
-				var knobGradient = context.createRadialGradient(knobX - 20, knobY - 19, 3, knobX, knobY, 58);
-				knobGradient.addColorStop(0, "#ffffff");
-				knobGradient.addColorStop(0.28, "#80b3d1");
-				knobGradient.addColorStop(1, "#2474a6");
-				context.fillStyle = knobGradient;
-				context.beginPath();
-				context.arc(knobX, knobY, 52, 0, Math.PI * 2);
-				context.fill();
-				context.strokeStyle = "#1b5c87";
-				context.lineWidth = 3;
-				context.stroke();
-				context.fillStyle = "rgba(255,255,255,0.72)";
-				context.beginPath();
-				context.ellipse(knobX - 14, knobY - 19, 14, 8, -0.45, 0, Math.PI * 2);
-				context.fill();
-
 				context.setTransform(1, 0, 0, 1, 0, 0);
+				context.clearRect(0, 0, size, size);
+				context.drawImage(staticLayer, 0, 0);
+				context.setTransform(size / JOYSTICK_SIZE, 0, 0, size / JOYSTICK_SIZE, 0, 0);
+				drawKnob(context, JOYSTICK_CENTER + x * JOYSTICK_TRAVEL, JOYSTICK_CENTER - y * JOYSTICK_TRAVEL, x, y);
+			}
+
+			// ---------- Trims ----------
+
+			function createTrim(element, min, max, majorEvery, onInput)
+			{
+				var vertical = element.classList.contains("trim-vertical");
+				var track = element.querySelector(".trim-track");
+				var rail = element.querySelector(".trim-rail");
+				var fill = element.querySelector(".trim-fill");
+				var lever = element.querySelector(".trim-lever");
+				var trackPointer = null;
+				var trim = { value: 0 };
+
+				for(var tick = min; tick <= max; tick += majorEvery / 5)
+				{
+					var mark = document.createElement("span");
+					mark.className = "trim-tick" + (tick === 0 ? " center" : (tick % majorEvery === 0 ? " major" : ""));
+					mark.style[vertical ? "top" : "left"] = (vertical ? (max - tick) : (tick - min)) / (max - min) * 100 + "%";
+					rail.appendChild(mark);
+				}
+
+				function percent(value)
+				{
+					return (value - min) / (max - min) * 100;
+				}
+
+				trim.set = function(value)
+				{
+					trim.value = value;
+					var position = percent(value);
+					var zero = percent(0);
+					track.setAttribute("aria-valuemin", min);
+					track.setAttribute("aria-valuemax", max);
+					track.setAttribute("aria-valuenow", value);
+					if(vertical)
+					{
+						lever.style.top = (100 - position) + "%";
+						fill.style.top = (100 - Math.max(position, zero)) + "%";
+						fill.style.height = Math.abs(position - zero) + "%";
+					}
+					else
+					{
+						lever.style.left = position + "%";
+						fill.style.left = Math.min(position, zero) + "%";
+						fill.style.width = Math.abs(position - zero) + "%";
+					}
+				};
+
+				function emit(value)
+				{
+					onInput(Math.max(min, Math.min(max, Math.round(value))));
+				}
+
+				function valueFromPointer(event)
+				{
+					var bounds = rail.getBoundingClientRect();
+					var ratio = vertical
+						? 1 - (event.clientY - bounds.top) / bounds.height
+						: (event.clientX - bounds.left) / bounds.width;
+					return min + Math.max(0, Math.min(1, ratio)) * (max - min);
+				}
+
+				track.addEventListener("pointerdown", function(event)
+				{
+					trackPointer = event.pointerId;
+					track.setPointerCapture(event.pointerId);
+					track.focus({ preventScroll: true });
+					emit(valueFromPointer(event));
+					event.preventDefault();
+				});
+				track.addEventListener("pointermove", function(event)
+				{
+					if(event.pointerId === trackPointer)
+					{
+						emit(valueFromPointer(event));
+					}
+				});
+				track.addEventListener("pointerup", function() { trackPointer = null; });
+				track.addEventListener("pointercancel", function() { trackPointer = null; });
+				track.addEventListener("keydown", function(event)
+				{
+					var steps = { ArrowUp: 1, ArrowRight: 1, ArrowDown: -1, ArrowLeft: -1, PageUp: 10, PageDown: -10 };
+					if(steps[event.key])
+					{
+						emit(trim.value + steps[event.key]);
+						event.preventDefault();
+					}
+					else if(event.key === "Home" || event.key === "End")
+					{
+						emit(event.key === "Home" ? min : max);
+						event.preventDefault();
+					}
+				});
+
+				var buttons = element.querySelectorAll(".trim-step");
+				for(var i = 0; i < buttons.length; i++)
+				{
+					buttons[i].addEventListener("click", function()
+					{
+						emit(trim.value + Number(this.getAttribute("data-step")));
+					});
+				}
+
+				trim.set(0);
+				return trim;
+			}
+
+			var throttleTrim = createTrim(document.getElementById("throttle-trim"), -100, 100, 50, function(value)
+			{
+				power = value;
+				scheduleControls();
+			});
+			var rudderTrim = createTrim(document.getElementById("rudder-trim"), -90, 90, 45, function(value)
+			{
+				direction = value;
+				scheduleControls();
+			});
+
+			// ---------- Affichage et commandes ----------
+
+			function setLcdBar(id, value, max)
+			{
+				var bar = document.getElementById(id);
+				var half = Math.abs(value) / max * 50;
+				bar.style.left = (value < 0 ? 50 - half : 50) + "%";
+				bar.style.width = half + "%";
 			}
 
 			function updateReadouts()
 			{
-				var powerLabel = power > 0 ? "avant" : (power < 0 ? "arrière" : "arrêt");
-				document.getElementById("power-value").textContent = power + " % · " + powerLabel;
+				var sign = power > 0 ? "+" : "";
+				document.getElementById("power-value").textContent = sign + power + "%";
 				document.getElementById("direction-value").textContent = direction === 0
-					? "0° · axe central"
-					: Math.abs(direction) + "° · " + (direction < 0 ? "bâbord" : "tribord");
-				document.getElementById("joystick-state").textContent = power === 0 && direction === 0
-					? "Neutre"
-					: powerLabel + " · " + Math.abs(direction) + "°";
-				document.getElementById("PuissanceSlider").value = power;
-				document.getElementById("DirectionSlider").value = direction;
-				joystickView.x = direction / 90;
-				joystickView.y = power / 100;
-				renderJoystick(joystickView.x, joystickView.y);
+					? "0°"
+					: (direction < 0 ? "B" : "T") + Math.abs(direction) + "°";
+				setLcdBar("lcd-power-bar", power, 100);
+				setLcdBar("lcd-direction-bar", direction, 90);
+				throttleTrim.set(power);
+				rudderTrim.set(direction);
+				if(joystickPointer === null)
+				{
+					joystickView.x = direction / 90;
+					joystickView.y = power / 100;
+					renderJoystick(joystickView.x, joystickView.y);
+				}
 			}
 
 			function publishControls()
@@ -306,11 +705,30 @@
 				}, 80);
 			}
 
+			function setProportion(level)
+			{
+				level = Math.max(0, Math.min(5, level));
+				var roller = document.getElementById("ProportionRoller");
+				if(level !== proportion)
+				{
+					var offset = parseFloat(roller.style.getPropertyValue("--roller-offset")) || 0;
+					roller.style.setProperty("--roller-offset", (offset + (level - proportion) * 6) + "px");
+				}
+				proportion = level;
+				roller.setAttribute("aria-valuenow", level);
+				document.getElementById("proportion-value").textContent = "N" + level;
+				var bar = document.getElementById("lcd-proportion-bar");
+				bar.style.left = "0";
+				bar.style.width = level * 20 + "%";
+				sendCommand(18, level);
+			}
+
 			function setJoystickFromPointer(event)
 			{
 				var bounds = canvas.getBoundingClientRect();
-				var x = ((event.clientX - bounds.left) / bounds.width - 0.5) * 2;
-				var y = (0.5 - (event.clientY - bounds.top) / bounds.height) * 2;
+				var scale = JOYSTICK_SIZE / bounds.width;
+				var x = ((event.clientX - bounds.left) * scale - JOYSTICK_CENTER) / JOYSTICK_TRAVEL;
+				var y = (JOYSTICK_CENTER - (event.clientY - bounds.top) * scale) / JOYSTICK_TRAVEL;
 				var distance = Math.sqrt(x * x + y * y);
 				if(distance > 1)
 				{
@@ -331,13 +749,15 @@
 				var startedAt = Date.now();
 				power = 0;
 				direction = 0;
-				updateReadouts();
 				if(commandTimer !== null)
 				{
 					clearTimeout(commandTimer);
 					commandTimer = null;
 				}
 				publishControls();
+				throttleTrim.set(0);
+				rudderTrim.set(0);
+				updateReadouts();
 
 				function animateReturn()
 				{
@@ -402,29 +822,37 @@
 				}
 			});
 
-			document.getElementById("PuissanceSlider").addEventListener("input", function()
+			var roller = document.getElementById("ProportionRoller");
+			var rollerButtons = roller.querySelectorAll("button");
+			for(var i = 0; i < rollerButtons.length; i++)
 			{
-				power = Number(this.value);
-				scheduleControls();
-			});
-			document.getElementById("DirectionSlider").addEventListener("input", function()
+				rollerButtons[i].addEventListener("click", function()
+				{
+					setProportion(proportion + Number(this.getAttribute("data-step")));
+				});
+			}
+			roller.addEventListener("keydown", function(event)
 			{
-				direction = Number(this.value);
-				scheduleControls();
+				if(event.key === "ArrowUp" || event.key === "ArrowDown")
+				{
+					setProportion(proportion + (event.key === "ArrowUp" ? 1 : -1));
+					event.preventDefault();
+				}
 			});
-			document.getElementById("ProportionSlider").addEventListener("input", function()
+			roller.addEventListener("wheel", function(event)
 			{
-				var level = Number(this.value);
-				document.getElementById("proportion-value").textContent = "Niveau " + level;
-				sendCommand(18, level);
-			});
+				setProportion(proportion + (event.deltaY < 0 ? 1 : -1));
+				event.preventDefault();
+			}, { passive: false });
+
 			document.getElementById("bt_connect").addEventListener("click", connect_onclick);
 			window.addEventListener("resize", function()
 			{
 				renderJoystick(joystickView.x, joystickView.y);
 			});
 
-			renderJoystick(0, 0);
+			setProportion(0);
+			updateReadouts();
 		</script>
 	</body>
 </html>

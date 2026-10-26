@@ -7,7 +7,9 @@ commune `app.css`.
 ## Identité visuelle et navigation
 
 L'interface utilise une barre bleu marine, des cartes claires, une accentuation
-bleu acier et des boutons ambre. La mise en page s'adapte aux écrans étroits.
+bleu acier et des boutons ambre. Le module Propulsion & direction adopte un
+pupitre graphite inspiré d'une radiocommande physique, avec des commandes
+contrastées ambre et bleu. La mise en page s'adapte aux écrans étroits.
 L'en-tête des écrans de pilotage affiche le nom du module, un indicateur de
 connexion WebSocket et les boutons de connexion et de retour au tableau de bord.
 
@@ -31,22 +33,29 @@ Lorsque PHPoC signale le mode `SETUP`, le tableau de bord affiche un avertisseme
 
 ### 3. Propulsion & direction — `web/_CassardPropulsion.php`
 
-- **Joystick graphique central** : rendu en perspective 3D sur canvas; il se
-  pilote à la souris, au toucher ou avec les flèches du clavier. L'axe avant /
-  arrière règle la puissance de -100 à +100 %, l'axe bâbord / tribord commande
-  la direction de -90 à +90°. Le joystick revient visuellement au neutre au
-  relâchement; cette action envoie l'arrêt moteur (commande 14) et le recentrage
-  du gouvernail (commande 17).
-- **Curseur inférieur de puissance** : commande séparément la marche arrière
-  (-100 %) et la marche avant (+100 %); il reste synchronisé avec le joystick.
-  Une valeur positive envoie la commande 12, une valeur négative la commande
-  13 et zéro l'arrêt (commande 14).
-- **Curseur latéral de direction** : commande le gouvernail de -90° à +90° et
-  reste synchronisé avec le joystick. Les valeurs négatives envoient la
-  commande de braquage à gauche (16), les valeurs positives celle à droite
-  (15) et le centre la commande de recentrage (17).
-- **Réactivité moteur** : curseur de niveau proportionnel de 0 à 5, commande
-  18 du module 2.
+L'écran reproduit la face d'une radiocommande de modélisme (type Spektrum DX6i)
+et est mis en page pour l'iPhone 16e (390 × 844 points, zones de sécurité
+comprises); sur un écran plus large, la radiocommande reste centrée.
+
+- **Manche vu de dessus** : dessiné sur canvas (platine vissée, bague aluminium
+  brossé à quatre repères, graduations tous les 5°, soufflet caoutchouc, pommeau
+  moleté). Il se pilote au toucher, à la souris ou avec les flèches du clavier.
+  L'axe avant / arrière règle la puissance de -100 à +100 %, l'axe bâbord /
+  tribord commande la direction de -90 à +90°. Au relâchement, il revient au
+  neutre et envoie l'arrêt moteur (commande 14) et le recentrage du gouvernail
+  (commande 17).
+- **Trim moteur vertical, à droite du manche** : levier strié dans une rainure
+  graduée, boutons AV / AR (pas de 5 %); synchronisé avec le manche. Une valeur
+  positive envoie la commande 12, une valeur négative la commande 13 et zéro
+  l'arrêt (commande 14).
+- **Trim direction horizontal, sous le manche** : boutons BÂB / TRI (pas de 5°);
+  les valeurs négatives envoient le braquage à gauche (16), les valeurs positives
+  celui à droite (15) et le centre le recentrage (17).
+- **Interrupteur POWER** : ouvre ou ferme la liaison WebSocket; le voyant et les
+  barres orange s'allument une fois connecté.
+- **Écran LCD** : affiche puissance, direction et réactivité.
+- **Molette** (à droite de l'écran) : réactivité moteur de 0 à 5, commande 18 du
+  module 2.
 
 Les commandes sont transmises au serveur WebSocket PHPoC `/_Cassard`. Les
 modifications combinées sont regroupées avant l'envoi pour limiter la cadence
