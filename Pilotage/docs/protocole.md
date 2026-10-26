@@ -32,7 +32,7 @@ Les trames supportees sont:
 
 | Module/adresse | Code | Commande | Parametres | Taille I2C |
 | --- | ---: | --- | --- | ---: |
-| Tourelle / 1 | 4 | Definir azimut et elevation | azimut 0-180, elevation 0-60 | 5 octets |
+| Tourelle / 1 | 4 | Definir azimut et elevation | azimut 0-180 (interface : 30-150, 90 = axe), elevation 0-80 | 5 octets |
 | Propulsion / 2 | 12 | Marche avant | puissance 0-100 | 4 octets |
 | Propulsion / 2 | 13 | Marche arriere | puissance 0-100 | 4 octets |
 | Propulsion / 2 | 14 | Arret moteur | aucun | 3 octets |

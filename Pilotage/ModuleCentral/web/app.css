@@ -1270,3 +1270,189 @@ body.helm-page {
 	color: #2b2f33;
 	text-shadow: 0 1px 0 rgba(255, 255, 255, 0.3);
 }
+
+/* Tourelle 100 mm — même coque et mêmes trims que le pupitre propulsion */
+
+body.turret-page {
+	display: flex;
+	flex-direction: column;
+	height: 100vh;
+	height: 100dvh;
+	min-height: 620px;
+}
+
+.turret {
+	display: flex;
+	flex: 1;
+	min-height: 0;
+	min-width: 0;
+	padding-top: 10px;
+	width: 100%;
+}
+
+.turret-body {
+	border-radius: 38px;
+	min-width: 0;
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	gap: 8px;
+	min-height: 0;
+	padding: 12px 22px 22px;
+}
+
+.turret-body:before,
+.turret-body:after {
+	bottom: 60px;
+	top: 120px;
+}
+
+.turret-strip {
+	align-items: center;
+	display: flex;
+	gap: 8px;
+	min-width: 0;
+	padding: 0 12px;
+}
+
+.turret-strip .tx-brand-badge {
+	flex: 0 0 auto;
+	font-size: 9px;
+	padding: 1px 6px;
+}
+
+.turret-strip .tx-power-switch {
+	flex: 0 0 auto;
+}
+
+.turret-view-heading .tx-print {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.turret-model {
+	color: #111316;
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	font-size: 10px;
+	font-style: italic;
+	font-weight: 900;
+	text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.turret-view {
+	display: flex;
+	flex: 1 1 0;
+	flex-direction: column;
+	gap: 4px;
+	min-height: 0;
+}
+
+.turret-view-heading {
+	align-items: center;
+	display: flex;
+	justify-content: space-between;
+	padding: 0 4px;
+}
+
+.turret-view-heading .tx-print {
+	color: #2b2f33;
+	text-shadow: 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.turret-readout {
+	background: #1b1d20;
+	border-radius: 5px;
+	box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.8), 0 1px 0 rgba(255, 255, 255, 0.35);
+	color: #ff9a52;
+	font-size: 11px;
+	font-variant-numeric: tabular-nums;
+	font-weight: 800;
+	min-width: 84px;
+	padding: 2px 8px;
+	text-align: right;
+}
+
+.turret-screen {
+	background: linear-gradient(180deg, #2a2c2f, #121315);
+	border-radius: 18px;
+	box-shadow: 0 1px 0 rgba(255, 255, 255, 0.35), inset 0 1px 2px rgba(0, 0, 0, 0.8);
+	flex: 1;
+	min-height: 0;
+	min-width: 0;
+	padding: 6px;
+}
+
+.turret-drawing {
+	background:
+		linear-gradient(rgba(60, 70, 80, 0.06) 1px, transparent 1px) 0 0 / 16px 16px,
+		linear-gradient(90deg, rgba(60, 70, 80, 0.06) 1px, transparent 1px) 0 0 / 16px 16px,
+		linear-gradient(180deg, #f6f7f4, #e9ebe7);
+	border-radius: 13px;
+	box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.3);
+	display: block;
+	height: 100%;
+	touch-action: none;
+	width: 100%;
+}
+
+.turret-drawing * {
+	vector-effect: non-scaling-stroke;
+}
+
+.turret-drawing .part { fill: #e7e7e5; stroke: #333; stroke-linejoin: round; stroke-width: 1.5; }
+.turret-drawing .detail { fill: none; stroke: #333; stroke-width: 1.1; }
+.turret-drawing .dashed { fill: none; stroke: #333; stroke-dasharray: 3 2; stroke-width: 0.8; }
+.turret-drawing .thin { stroke: #333; stroke-width: 0.9; }
+.turret-drawing .vent { fill: #c4c5c1; stroke: #333; stroke-width: 1; }
+.turret-drawing .axis { stroke: #777; stroke-dasharray: 8 3 1.5 3; stroke-width: 0.7; }
+.turret-drawing .seam { stroke: #999; stroke-width: 0.7; }
+.turret-drawing .rivet { fill: #333; }
+.turret-drawing .ground { stroke: #333; stroke-width: 1.3; }
+
+.turret-dial-arc { fill: none; stroke: #8b9197; stroke-width: 1; }
+.turret-tick { stroke: #8b9197; stroke-width: 0.8; }
+.turret-tick.major { stroke: #3a3d40; stroke-width: 1.4; }
+.turret-tick-label { fill: #5a5f64; font: 700 66px -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif; }
+.turret-dial-label { fill: #8b9197; font: 800 58px -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif; letter-spacing: 6px; }
+.turret-dial-marker { fill: var(--tx-orange); stroke: #8a3a0e; stroke-width: 0.8; }
+.turret-ship-axis { stroke: rgba(70, 80, 90, 0.35); stroke-dasharray: 10 4 2 4; stroke-width: 0.8; }
+.turret-pivot { fill: var(--tx-orange); stroke: #333; stroke-width: 1; pointer-events: none; }
+
+.turret-handle {
+	cursor: grab;
+}
+
+.turret-handle:hover .part {
+	fill: #eeeeec;
+}
+
+.turret-handle.dragging {
+	cursor: grabbing;
+}
+
+.turret-handle.dragging .part {
+	fill: #f6e2d3;
+}
+
+.turret-trim-azimuth {
+	flex: 0 0 52px;
+}
+
+.turret-side-row {
+	display: flex;
+	flex: 1;
+	gap: 10px;
+	min-height: 0;
+}
+
+.turret-trim-elevation {
+	flex: 0 0 52px;
+}
+
+.turret-trim-elevation .trim-step {
+	font-size: 6px;
+}

@@ -112,7 +112,7 @@ void TourelleControler::Setup(TourelleParams tourelleParams)
 			this->_TourelleElevation.SetDefault(false);
 			if (this->_TourelleElevation.SetSpeed(tourelleParams.elevationSpeed) == 0)
 			{
-				if (this->_TourelleElevation.SetRange(0, 60) == 0)
+				if (this->_TourelleElevation.SetRange(0, 80) == 0)
 				{
 					SerialLog.LogTV("["+ tourelleParams.id + "] Attached servoElevation to pin :", tourelleParams.servoElevationPin);
 					this->_TourelleElevation.AttachToPin(tourelleParams.servoElevationPin);	// attache la pin 10 � l'objet servo TourelleElevation
@@ -138,7 +138,7 @@ void TourelleControler::Setup(TourelleParams tourelleParams)
 void TourelleControler::GoToPos(int azimut, int elevation)
 //---------------------------------------------------------------------------------------------------------------------------------------
 {
-	if (azimut < 0 || azimut > 180 || elevation < 0 || elevation > 60)
+	if (azimut < 0 || azimut > 180 || elevation < 0 || elevation > 80)
 	{
 		ErrorValueOutOfRange();
 		return;

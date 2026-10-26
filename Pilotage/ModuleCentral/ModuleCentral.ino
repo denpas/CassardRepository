@@ -49,7 +49,7 @@ byte expectedCommandLength(const byte* command, byte fieldCount)
 
   if (command[0] == MODULE_TOURELLE &&
       command[1] == TOURELLE_SETAZIMUTELEVATION)
-    return fieldCount == 5 && command[2] <= 180 && command[3] <= 60 ? 5 : 0;
+    return fieldCount == 5 && command[2] <= 180 && command[3] <= 80 ? 5 : 0;
 
   if (command[0] == MODULE_PROPULSION)
   {

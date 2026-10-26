@@ -77,5 +77,5 @@ materiel. Televerser chaque sketch sur sa carte puis deployer le contenu de
 - L'interface actuelle ne recoit pas de retour d'etat ou d'accuse I2C des
   modules.
 - Les sorties fumee et son de la tourelle sont reservees mais non implementees.
-- Les limites logicielles de servo (0-180 degres en azimut, 0-60 en elevation)
+- Les limites logicielles de servo (0-180 degres en azimut, 0-80 en elevation)
   doivent etre confirmees sur le mecanisme physique avant utilisation.

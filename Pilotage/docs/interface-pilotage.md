@@ -65,9 +65,30 @@ de sécurité. Une perte de connexion ne produit pas de commandes différées.
 
 ### 4. Tourelle 100 mm — `web/_CassardTourelle.php`
 
-Deux curseurs permettent de régler l'élévation de 0° à 60° et l'azimut de 0° à
-180°. À chaque changement, la page envoie les deux coordonnées dans une trame
-unique de commande 4 au module 1, afin de conserver la consigne de l'autre axe.
+Même coque et mêmes trims que le pupitre propulsion, au format iPhone 16e
+vertical (390 × 844), sans défilement : les deux vues se partagent la hauteur.
+
+- **Vue de dessus** (en haut), redessinée en SVG d'après le plan
+  `tourelle_vue_dessus.png` : l'avant du navire est en haut. On saisit la
+  tourelle au doigt ou à la souris et on la fait pivoter autour de son axe,
+  de 60° à bâbord à 60° à tribord. Un cadran gradué (tous les 5°, repères à 0,
+  30 et 60°) et un index orange indiquent l'azimut.
+- **Trim d'azimut** sous la vue de dessus : boutons BÂB / TRI (pas de 5°),
+  levier à glisser, synchronisé avec la vue.
+- **Vue de profil** (en bas), d'après `tourelle_vue_profil.png` : on saisit le
+  canon et on l'incline autour de ses tourillons, de l'horizontale (0°) à 80°.
+  Cadran gradué de 0 à 80° avec index orange.
+- **Trim d'élévation** vertical à droite de la vue de profil : boutons HAUT /
+  BAS (pas de 5°).
+- **Interrupteur POWER** : ouvre la liaison authentifiée ; la position courante
+  est envoyée dès que le mot de passe est accepté.
+
+À chaque changement, la page envoie les deux coordonnées dans une trame
+unique de commande 4 au module 1 (regroupées toutes les 80 ms). L'azimut
+servo vaut `90 + rotation` (30 à 150, 90 = axe du navire, au-delà de 90 =
+tribord) ; l'élévation servo vaut l'angle du canon (0 à 80). **Le sens de
+rotation réel du servo d'azimut et la course mécanique jusqu'à 80° doivent être
+vérifiés sur la maquette** avant usage.
 
 ### 5. Instruments — `web/_CassardInstruments.php`
 
