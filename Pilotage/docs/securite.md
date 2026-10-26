@@ -89,8 +89,10 @@ et les trames non signées sont refusés.
 - **Aléa du nonce** : l'Arduino n'a pas de générateur matériel ; le nonce mélange
   bruit analogique et gigue d'horloge. Cela suffit à empêcher le rejeu entre
   sessions, pas à résister à une analyse matérielle.
-- **Non vérifié sur le matériel** : le code n'a pas été compilé pour AVR (chaîne
-  Arduino absente lors de l'écriture). Vérifier à la compilation l'occupation
-  mémoire du module central (SHA-256 ajoute environ 2 Ko de flash). Vérifier
-  aussi que `client.print()` renvoie bien les réponses au navigateur (le
-  manuel PHPoC ne le documente pas explicitement).
+- **Compilé, pas encore essayé sur la carte** : le module central compile pour
+  Uno (84 % de flash, 703 octets de RAM libre, environ 490 octets de pile au plus
+  profond pendant la vérification) et pour Mega 2560 (voir le README). La
+  source de la bibliothèque PHPoC 1.5.1 confirme que `client.print()` écrit sur
+  le socket du client concerné, le firmware PHPoC assurant le tramage WebSocket.
+  Les trames sont lues dans un tampon de 64 caractères : `readLine()` sans
+  argument les tronquerait à 32. Reste à valider sur la carte réelle.

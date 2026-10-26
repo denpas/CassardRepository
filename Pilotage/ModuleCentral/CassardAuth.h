@@ -9,17 +9,25 @@
 #include <stdint.h>
 #include <string.h>
 
+// Les constantes et la clé de pilotage sont en mémoire flash (PROGMEM) pour
+// préserver la RAM de l'Uno : la clé passée aux fonctions doit y être aussi.
 #ifdef ARDUINO
 #include <avr/pgmspace.h>
-#define CASSARD_K_READ(index) pgm_read_dword(&CassardSha256K[index])
+#define CASSARD_PGM_DWORD(address) pgm_read_dword(address)
+#define CASSARD_PGM_BYTE(address) pgm_read_byte(address)
 #else
 #define PROGMEM
-#define CASSARD_K_READ(index) CassardSha256K[index]
+#define CASSARD_PGM_DWORD(address) (*(address))
+#define CASSARD_PGM_BYTE(address) (*(address))
 #endif
 
 const uint8_t CassardKeyLength = 32;
 const uint8_t CassardNonceLength = 16;
 const uint8_t CassardMacHexLength = 16;
+
+static const uint32_t CassardSha256Initial[8] PROGMEM = {
+  0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19
+};
 
 static const uint32_t CassardSha256K[64] PROGMEM = {
   0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
@@ -67,7 +75,7 @@ static void cassardSha256Compress(CassardSha256& sha)
       w[i & 15] += s0 + w[(i + 9) & 15] + s1;
     }
     uint32_t t1 = h + (cassardRotr(e, 6) ^ cassardRotr(e, 11) ^ cassardRotr(e, 25)) +
-                  ((e & f) ^ (~e & g)) + CASSARD_K_READ(i) + w[i & 15];
+                  ((e & f) ^ (~e & g)) + CASSARD_PGM_DWORD(&CassardSha256K[i]) + w[i & 15];
     uint32_t t2 = (cassardRotr(a, 2) ^ cassardRotr(a, 13) ^ cassardRotr(a, 22)) +
                   ((a & b) ^ (a & c) ^ (b & c));
     h = g; g = f; f = e; e = d + t1;
@@ -80,10 +88,8 @@ static void cassardSha256Compress(CassardSha256& sha)
 
 static void cassardSha256Begin(CassardSha256& sha)
 {
-  static const uint32_t initial[8] = {
-    0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19
-  };
-  memcpy(sha.state, initial, sizeof(initial));
+  for (uint8_t i = 0; i < 8; i++)
+    sha.state[i] = CASSARD_PGM_DWORD(&CassardSha256Initial[i]);
   sha.blockLength = 0;
   sha.totalLength = 0;
 }
@@ -123,13 +129,15 @@ static void cassardSha256End(CassardSha256& sha, uint8_t* digest)
   }
 }
 
+// Bloc de clé XOR ipad/opad, injecté octet par octet (pas de tampon de 64 octets sur la pile).
 static void cassardHmacPad(CassardSha256& sha, const uint8_t* key, uint8_t pad)
 {
-  uint8_t padded[64];
-  for (uint8_t i = 0; i < 64; i++)
-    padded[i] = (i < CassardKeyLength ? key[i] : 0) ^ pad;
   cassardSha256Begin(sha);
-  cassardSha256Update(sha, padded, 64);
+  for (uint8_t i = 0; i < 64; i++)
+  {
+    uint8_t padded = (i < CassardKeyLength ? CASSARD_PGM_BYTE(&key[i]) : 0) ^ pad;
+    cassardSha256Update(sha, &padded, 1);
+  }
 }
 
 // HMAC-SHA256 d'un message en trois morceaux (nonce, séquence, charge).

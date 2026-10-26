@@ -48,9 +48,18 @@ Le dossier de commande 16:9 au format PowerPoint est disponible dans
 
 ## Compiler
 
-Installer Arduino CLI ou Arduino IDE, le coeur AVR, la bibliotheque PHPoC
-necessaire au module central et les dependances disponibles dans
-`libraries/CassardControl`. Depuis la racine du depot, avec Arduino CLI:
+Environnement verifie (macOS Apple Silicon) :
+
+```sh
+# arduino-cli officiel (https://downloads.arduino.cc/arduino-cli/), place dans le PATH
+softwareupdate --install-rosetta --agree-to-license   # Apple Silicon : avr-gcc est x86_64
+arduino-cli core update-index && arduino-cli core install arduino:avr   # 1.8.8
+arduino-cli lib update-index && arduino-cli lib install "PHPoC@1.5.1"
+```
+
+`CassardControl` est une bibliotheque locale (`libraries/CassardControl`) : chaque
+sketch inclut d'abord `<CassardControl.h>`, sans quoi Arduino ne la detecte pas.
+Depuis la racine du depot, avec Arduino CLI:
 
 ```sh
 arduino-cli compile --fqbn arduino:avr:nano --libraries Pilotage/libraries Pilotage/ModulePropulsion
@@ -69,7 +78,20 @@ le fichier `ModuleCentral/CassardSecret.h`, genere (hors Git) par
 `python3 Pilotage/tools/generer-cle-pilotage.py`.
 Verifier que la cible choisie correspond a la carte reelle: les commandes ci-
 dessus indiquent des profils d'exemple, pas une detection automatique du
-materiel. Televerser chaque sketch sur sa carte puis deployer le contenu de
+materiel.
+
+Occupation memoire mesuree (arduino:avr 1.8.8, PHPoC 1.5.1) :
+
+| Sketch | Carte | Flash | RAM globale (reste) |
+| --- | --- | --- | --- |
+| ModuleCentral | Uno | 27 268 o (84 %) | 1 345 o (703 o) |
+| ModuleCentral | Mega 2560 | 28 728 o (11 %) | 1 564 o (6 628 o) |
+| ModulePropulsion | Nano | 12 870 o (41 %) | 1 292 o (756 o) |
+| ModuleTourelle | Nano | 12 352 o (40 %) | 1 297 o (751 o) |
+
+Sur Uno, la verification d'une trame utilise environ 490 octets de pile au
+plus profond (mesure `-fstack-usage`) : eviter d'ajouter des variables globales
+ou des `String` au module central sans remesurer. Televerser chaque sketch sur sa carte puis deployer le contenu de
 `ModuleCentral/web` sur le serveur web PHPoC.
 
 ## Limitations connues

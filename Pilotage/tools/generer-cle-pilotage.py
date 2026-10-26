@@ -29,8 +29,9 @@ def main():
         "// Généré par tools/generer-cle-pilotage.py — NE PAS VERSIONNER.\n"
         "#ifndef CASSARD_SECRET_H\n"
         "#define CASSARD_SECRET_H\n\n"
-        "#include <stdint.h>\n\n"
-        f"static const uint8_t CassardPilotKey[32] = {{ {values} }};\n\n"
+        "#include \"CassardAuth.h\"\n\n"
+        "// En mémoire flash : CassardAuth.h la lit avec pgm_read_byte.\n"
+        f"static const uint8_t CassardPilotKey[32] PROGMEM = {{ {values} }};\n\n"
         "#endif\n",
         encoding="utf-8",
     )

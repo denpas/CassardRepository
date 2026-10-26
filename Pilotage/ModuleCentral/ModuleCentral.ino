@@ -1,3 +1,4 @@
+#include <CassardControl.h>
 #include <Wire.h>
 #include "SPI.h"
 #include "Phpoc.h"
@@ -23,14 +24,13 @@ void setup()
   server.beginWebSocket("_Cassard");
 }
 
-bool parseByteField(const String& frame, unsigned int& position, byte& value)
+bool parseByteField(const char* frame, byte& position, byte& value)
 {
-  const unsigned int length = frame.length();
-  if (position >= length || frame[position] < '0' || frame[position] > '9')
+  if (frame[position] < '0' || frame[position] > '9')
     return false;
 
   unsigned int parsed = 0;
-  while (position < length && frame[position] >= '0' && frame[position] <= '9')
+  while (frame[position] >= '0' && frame[position] <= '9')
   {
     parsed = parsed * 10 + frame[position] - '0';
     if (parsed > 255)
@@ -69,28 +69,27 @@ byte expectedCommandLength(const byte* command, byte fieldCount)
   return 0;
 }
 
-bool parseCommand(String frame, byte* command, byte& fieldCount)
+bool parseCommand(const char* frame, byte* command, byte& fieldCount)
 {
-  frame.trim();
-  if (frame.length() > 19)
+  if (strlen(frame) > 19)
     return false;
 
   fieldCount = 0;
-  unsigned int position = 0;
+  byte position = 0;
 
-  while (position < frame.length())
+  while (frame[position])
   {
     if (fieldCount >= MaxCommandLength ||
         !parseByteField(frame, position, command[fieldCount]))
       return false;
     fieldCount++;
 
-    if (position == frame.length())
+    if (!frame[position])
       break;
     if (frame[position] != ',')
       return false;
     position++;
-    if (position == frame.length())
+    if (!frame[position])
       return false;
   }
 
@@ -152,16 +151,24 @@ void loop()
   if (!client)
     return;
 
-  String line = client.readLine();
-  line.trim();
-  if (line.length() == 0 || line.length() > MaxFrameLength)
+  // readLine() sans argument tronque à 32 caractères (tampon de la bibliothèque
+  // PHPoC) : on lit dans notre tampon. Une ligne trop longue est coupée par la
+  // bibliothèque, qui jette la suite ; elle est alors refusée ci-dessous.
+  char frame[MaxFrameLength + 3];
+  int length = client.readLine((uint8_t*)frame, MaxFrameLength + 2);
+  while (length > 0 && (frame[length - 1] == '\r' || frame[length - 1] == '\n' || frame[length - 1] == ' '))
+    length--;
+  frame[length > 0 ? length : 0] = 0;
+  if (length <= 0)
+    return;
+  if (length > MaxFrameLength)
   {
     reply(client, "AUTH,ERR");
     return;
   }
 
   // Nouvelle session : l'ancienne devient invalide, on met le navire en sécurité.
-  if (line == "AUTH")
+  if (strcmp(frame, "AUTH") == 0)
   {
     if (sessionActive)
       sendSafeStop();
@@ -171,9 +178,7 @@ void loop()
     return;
   }
 
-  char frame[MaxFrameLength + 1];
   char payload[MaxPayloadLength];
-  line.toCharArray(frame, sizeof(frame));
   if (!sessionActive ||
       !cassardVerifyFrame(CassardPilotKey, sessionNonce, lastSequence, frame, payload, sizeof(payload)))
   {
@@ -189,6 +194,6 @@ void loop()
 
   byte command[MaxCommandLength];
   byte fieldCount;
-  if (parseCommand(String(payload), command, fieldCount))
+  if (parseCommand(payload, command, fieldCount))
     forwardCommand(command, fieldCount);
 }

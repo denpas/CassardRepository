@@ -1,3 +1,4 @@
+#include <CassardControl.h>
 #include <CassardControl/LogControler.h>
 #include "PropulsionCONTControler.h"
 #include <CassardControl/I2CControler.h>
