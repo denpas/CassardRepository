@@ -331,8 +331,10 @@ ASALocalRun/
 
 Photos/
 
-# Clé de pilotage du module central (tools/generer-cle-pilotage.py)
-Pilotage/ModuleCentral/CassardSecret.h
-Pilotage/ModuleCentral/CassardWifi.h
-# Pages web embarquées, générées par tools/generer-pages-web.py
-Pilotage/ModuleCentral/PagesWeb.h
+# Clé de pilotage du module central (outils/generer-cle-pilotage.py)
+firmware/ModuleCentral/CassardSecret.h
+firmware/ModuleCentral/CassardWifi.h
+# Pages web embarquées, générées par outils/generer-pages-web.py
+firmware/ModuleCentral/PagesWeb.h
+# Image intermédiaire générée par materiel/carte-servo-i2c/sources/docs.py
+docs/carte-servo-i2c/img/schematic_rot.png
