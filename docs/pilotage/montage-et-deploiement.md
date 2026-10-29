@@ -70,6 +70,19 @@ arduino-cli compile --fqbn arduino:avr:nano --libraries firmware/libraries firmw
 arduino-cli compile --fqbn arduino:renesas_uno:unor4wifi --libraries firmware/libraries firmware/ModuleCentral
 ```
 
+## Matrice de LED du module central
+
+La matrice 8 x 12 du R4 WiFi est decoupee en trois zones fixes, lisibles de
+loin :
+
+| Colonnes | Zone | Affichage |
+| --- | --- | --- |
+| 0 a 7 | Liaison | croix clignotant a 1 Hz : aucun pilote (le clignotement prouve que la carte tourne) ; pixel tournant sur le contour : poste connecte, mot de passe pas encore valide ; coche fixe : pilote connecte |
+| 9 et 10 | Trafic | bargraphe des trames valides par seconde, echelle logarithmique : 1, 2, 5, 10, 20, 50, 100, 200 trames/s pour 1 a 8 LED ; le pixel du haut s'eteint 30 ms a chaque trame. Barre vide avec la coche : connecte mais aucune commande |
+| 11 | Erreur | « ! » allume 2 s apres une trame refusee (signature, rejeu, trame non signee ou trop longue, commande invalide) ; clignotement rapide si les erreurs persistent (au moins 2 dans la seconde et plus de 10 % des trames) |
+
+Une croix figee (sans clignotement) signale un firmware bloque.
+
 ## Depannage rapide
 
 - Une commande de tourelle doit etre `1,4,azimut,elevation,255` (azimut 0-180,

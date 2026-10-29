@@ -15,7 +15,7 @@ Puis ouvrir http://localhost:8080/simulation.html (mot de passe de démo
 
 | Élément | Comportement reproduit | Source |
 | --- | --- | --- |
-| Carte maître UNO R4 WiFi | Poignée de main `AUTH` / `NONCE`, vérification HMAC et séquence, session liée au poste, `AUTH,REPRISE`, arrêt de sécurité à chaque nouvelle session et sur perte de liaison (~3 s), validation des trames, matrice de LED, messages du moniteur série | `firmware/ModuleCentral/ModuleCentral.ino` |
+| Carte maître UNO R4 WiFi | Poignée de main `AUTH` / `NONCE`, vérification HMAC et séquence, session liée au poste, `AUTH,REPRISE`, arrêt de sécurité à chaque nouvelle session et sur perte de liaison (~3 s), validation des trames, matrice de LED en trois zones (liaison, trafic, erreur) calculée comme `renderMatrix()`, messages du moniteur série | `firmware/ModuleCentral/ModuleCentral.ino` |
 | Nano propulsion (I2C 2) | Mélange proportionnel (division entière comme en C), PWM `\|puissance\| × 190 / 100`, moteurs en miroir (DIR), servo de barre `90 ± angle`, LED OK / erreur | `firmware/ModulePropulsion/PropulsionCONTControler.h` |
 | Nano tourelle (I2C 1) | `GoToPos` : servos d'azimut (0–180) et d'élévation (0–80) | `firmware/ModuleTourelle/TourelleControler.h` |
 

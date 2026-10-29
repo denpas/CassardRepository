@@ -71,8 +71,8 @@ sequenceDiagram
   la valide puis la route vers l'adresse `1` ou `2` en maitre I2C. Il arrete le
   moteur et recentre la barre a chaque nouvelle session et des que la liaison
   du pilote est perdue (WebSocket ferme ou sans reponse au ping, environ 3 s).
-  La matrice de LED de la carte indique l'etat (point : aucun pilote, cadre :
-  pilote connecte, cadre pointe : commande transmise).
+  La matrice de LED de la carte affiche son etat en trois zones (voir
+  [montage-et-deploiement.md](./montage-et-deploiement.md#matrice-de-led-du-module-central)).
 - **Module propulsion** (`firmware/ModulePropulsion`) : esclave `2`; commande les moteurs
   continus et le servo de direction.
 - **Module tourelle** (`firmware/ModuleTourelle`) : esclave `1`; commande les servos

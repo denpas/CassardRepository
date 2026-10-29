@@ -50,13 +50,29 @@ char sessionNonce[CassardNonceLength * 2 + 1];
 uint32_t lastSequence = 0;
 uint8_t entropyPool[32];
 
-// Matrice de LED (8 x 12) : point = aucun pilote, cadre = pilote connecté,
-// cadre pointé = commande transmise.
-const uint32_t MatrixIdle[3] = { 0x00000000, 0x00600600, 0x00000000 };
-const uint32_t MatrixPilot[3] = { 0xFFF80180, 0x18018018, 0x01801FFF };
-const uint32_t MatrixCommand[3] = { 0xFFF80180, 0x18618618, 0x01801FFF };
-uint32_t matrixFlashStart = 0;
-bool matrixFlashing = false;
+// Matrice de LED (8 lignes x 12 colonnes), trois zones fixes :
+//  colonnes 0-7  : liaison - croix clignotante à 1 Hz (aucun pilote), pixel qui
+//                  tourne sur le contour (poste connecté, mot de passe pas encore
+//                  validé), coche fixe (pilote connecté) ;
+//  colonnes 9-10 : trafic - bargraphe logarithmique des trames valides par
+//                  seconde ; le pixel du haut s'éteint 30 ms à chaque trame ;
+//  colonne 11    : erreur - « ! » allumé 2 s après une trame refusée, clignotant
+//                  rapide si les erreurs persistent (au moins 2 dans la dernière
+//                  seconde et plus de 10 % des trames).
+const char* const IconCross[8] = { "X......X", ".X....X.", "..X..X..", "...XX...", "...XX...", "..X..X..", ".X....X.", "X......X" };
+const char* const IconCheck[8] = { "........", ".......X", "......X.", ".....X..", "X...X...", ".X.X....", "..X.....", "........" };
+const uint16_t TrafficLevels[8] = { 1, 2, 5, 10, 20, 50, 100, 200 };   // trames/s pour 1 à 8 LED
+uint8_t matrixPixels[8][12];
+bool sessionReady = false;      // mot de passe validé (PING signé accepté)
+bool errorSeen = false;
+uint32_t lastFrameMs = 0;
+uint32_t lastErrorMs = 0;
+uint32_t lastRateMs = 0;
+uint16_t frameCount = 0;        // trames valides et refusées sur la seconde en cours
+uint16_t errorCount = 0;
+uint16_t framesPerSecond = 0;
+uint16_t errorsPerSecond = 0;
+uint8_t errorPercent = 0;
 
 bool parseByteField(const char* frame, byte& position, byte& value)
 {
@@ -177,11 +193,93 @@ void reply(uint8_t client, const char* message)
   webSocket.sendTXT(client, message);
 }
 
+void noteFrame()
+{
+  frameCount++;
+  lastFrameMs = millis();
+}
+
+void noteError()
+{
+  errorCount++;
+  lastErrorMs = millis();
+  errorSeen = true;
+}
+
+void drawIcon(const char* const icon[8])
+{
+  for (byte row = 0; row < 8; row++)
+    for (byte col = 0; col < 8; col++)
+      matrixPixels[row][col] = icon[row][col] == 'X';
+}
+
+void renderMatrix(uint32_t now)
+{
+  memset(matrixPixels, 0, sizeof(matrixPixels));
+
+  if (sessionReady)
+  {
+    drawIcon(IconCheck);
+    byte height = 0;
+    while (height < 8 && framesPerSecond >= TrafficLevels[height])
+      height++;
+    for (byte row = 0; row < height; row++)
+      matrixPixels[7 - row][9] = matrixPixels[7 - row][10] = 1;
+    if (height > 0 && now - lastFrameMs < 30)
+      matrixPixels[8 - height][9] = matrixPixels[8 - height][10] = 0;
+  }
+  else if (webSocket.connectedClients() > 0)
+  {
+    // Connexion en cours : un pixel parcourt les 28 LED du contour, un pas toutes les 40 ms.
+    byte step = (now / 40) % 28;
+    if (step < 7)
+      matrixPixels[0][step] = 1;
+    else if (step < 14)
+      matrixPixels[step - 7][7] = 1;
+    else if (step < 21)
+      matrixPixels[7][7 - (step - 14)] = 1;
+    else
+      matrixPixels[7 - (step - 21)][0] = 1;
+  }
+  else if ((now / 500) & 1)
+  {
+    drawIcon(IconCross);   // clignote : prouve que la carte tourne
+  }
+
+  bool persistent = errorsPerSecond >= 2 && errorPercent > 10;
+  if (errorSeen && now - lastErrorMs < 2000 && (!persistent || ((now / 125) & 1)))
+    for (byte row = 0; row < 8; row++)
+      if (row != 5)
+        matrixPixels[row][11] = 1;
+
+  matrix.renderBitmap(matrixPixels, 8, 12);
+}
+
+void updateMatrix()
+{
+  uint32_t now = millis();
+  if (now - lastRateMs >= 1000)
+  {
+    uint16_t total = frameCount + errorCount;
+    framesPerSecond = frameCount;
+    errorsPerSecond = errorCount;
+    errorPercent = total ? (uint32_t)errorCount * 100 / total : 0;
+    frameCount = errorCount = 0;
+    lastRateMs = now;
+  }
+  static uint32_t lastRenderMs = 0;
+  if (now - lastRenderMs >= 10)
+  {
+    lastRenderMs = now;
+    renderMatrix(now);
+  }
+}
+
 void endSession()
 {
   sendSafeStop();
   sessionClient = NoClient;
-  matrix.loadFrame(MatrixIdle);
+  sessionReady = false;
 }
 
 void handleFrame(uint8_t client, const uint8_t* data, size_t length)
@@ -192,6 +290,7 @@ void handleFrame(uint8_t client, const uint8_t* data, size_t length)
     return;
   if (length > MaxFrameLength)
   {
+    noteError();
     reply(client, "AUTH,ERR");
     return;
   }
@@ -210,6 +309,7 @@ void handleFrame(uint8_t client, const uint8_t* data, size_t length)
     }
     newSessionNonce();
     sessionClient = client;
+    sessionReady = false;
     char message[6 + sizeof(sessionNonce)];
     strcpy(message, "NONCE,");
     strcat(message, sessionNonce);
@@ -221,14 +321,16 @@ void handleFrame(uint8_t client, const uint8_t* data, size_t length)
   if (client != sessionClient ||
       !cassardVerifyFrame(CassardPilotKey, sessionNonce, lastSequence, frame, payload, sizeof(payload)))
   {
+    noteError();
     reply(client, "AUTH,ERR");
     return;
   }
 
   if (strcmp(payload, "PING") == 0)
   {
+    sessionReady = true;
+    noteFrame();
     reply(client, "AUTH,OK");
-    matrix.loadFrame(MatrixPilot);
     return;
   }
 
@@ -237,10 +339,10 @@ void handleFrame(uint8_t client, const uint8_t* data, size_t length)
   if (parseCommand(payload, command, fieldCount))
   {
     forwardCommand(command, fieldCount);
-    matrix.loadFrame(MatrixCommand);
-    matrixFlashStart = millis();
-    matrixFlashing = true;
+    noteFrame();
   }
+  else
+    noteError();   // signée mais invalide (commande, longueur ou valeur)
 }
 
 void onWebSocketEvent(uint8_t client, WStype_t type, uint8_t* data, size_t length)
@@ -358,7 +460,7 @@ void setup()
 {
   Serial.begin(115200);
   matrix.begin();
-  matrix.loadFrame(MatrixIdle);
+  renderMatrix(millis());
   Wire.begin();
   newSessionNonce();
   startWifi();
@@ -375,11 +477,7 @@ void loop()
   webSocket.loop();
   serveHttp();
 
-  if (matrixFlashing && millis() - matrixFlashStart > 80)
-  {
-    matrix.loadFrame(sessionClient != NoClient ? MatrixPilot : MatrixIdle);
-    matrixFlashing = false;
-  }
+  updateMatrix();
 
 #if !CASSARD_WIFI_POINT_ACCES
   static uint32_t lastWifiCheck = 0;

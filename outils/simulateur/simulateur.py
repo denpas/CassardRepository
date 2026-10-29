@@ -152,7 +152,7 @@ def i2c_send(frame, reason=""):
 
 
 # ------------------------------------------------- carte maître (R4 WiFi)
-master = {"client": None, "nonce": "", "last": 0}
+master = {"client": None, "nonce": "", "last": 0, "ready": False}
 clients = {}
 next_id = [0]
 LIMITS = {(1, 4): (5, (180, 80)), (2, 12): (4, (100,)), (2, 13): (4, (100,)), (2, 14): (3, ()),
@@ -160,11 +160,12 @@ LIMITS = {(1, 4): (5, (180, 80)), (2, 12): (4, (100,)), (2, 13): (4, (100,)), (2
 
 
 def publish_master():
-    emit(t="master", clients=sorted(clients), session=master["client"], seq=master["last"])
+    emit(t="master", clients=sorted(clients), session=master["client"], seq=master["last"], ready=master["ready"])
 
 
-def matrix(frame):
-    emit(t="matrix", frame=frame)
+def received(valid):
+    """Trame comptée par la matrice de LED : valide, ou refusée (« ! »)."""
+    emit(t="rx", ok=valid)
 
 
 def parse_command(payload):
@@ -186,8 +187,7 @@ def safe_stop(reason):
 
 def end_session(reason):
     safe_stop(reason)
-    master["client"] = None
-    matrix("idle")
+    master.update(client=None, ready=False)
     publish_master()
 
 
@@ -197,13 +197,14 @@ def handle_frame(client, text):
         return
     emit(t="ws", dir="in", client=client, text=text)
     if len(text) > 64:
+        received(False)
         return clients[client].send("AUTH,ERR")
     if text == "AUTH":
         if master["client"] is not None:
             safe_stop("nouvelle session")
             if master["client"] != client and master["client"] in clients:
                 clients[master["client"]].send("AUTH,REPRISE")
-        master.update(client=client, nonce=secrets.token_hex(16), last=0)
+        master.update(client=client, nonce=secrets.token_hex(16), last=0, ready=False)
         publish_master()
         return clients[client].send("NONCE," + master["nonce"])
     parts = text.split("|")
@@ -213,17 +214,19 @@ def handle_frame(client, text):
         expected = hmac.new(KEY, f"{master['nonce']}|{sequence}|{payload}".encode(), hashlib.sha256).hexdigest()[:16]
         ok = hmac.compare_digest(expected, mac) and int(sequence) > master["last"]
     if not ok:
+        received(False)
         return clients[client].send("AUTH,ERR")
     master["last"] = int(sequence)
-    publish_master()
     if payload == "PING":
-        matrix("pilot")
+        master["ready"] = True
+        publish_master()
+        received(True)
         return clients[client].send("AUTH,OK")
+    publish_master()
     fields = parse_command(payload)
     if fields:
         i2c_send(fields)
-        matrix("command")
-        threading.Timer(0.08, lambda: matrix("pilot" if master["client"] is not None else "idle")).start()
+    received(bool(fields))   # signée mais invalide : erreur, comme le firmware
 
 
 class WebSocketHandler(socketserver.StreamRequestHandler):
@@ -357,7 +360,6 @@ class HttpHandler(http.server.SimpleHTTPRequestHandler):
         with lock:
             q.put(json.dumps(dict(t="serial", ms=int(time.time() * 1000),
                                   text="Point d'acces Wi-Fi \"cassard\" (WPA2) : interface sur http://192.168.4.1")))
-            matrix("pilot" if master["client"] is not None else "idle")
             publish_master()
             for nano in nanos.values():
                 nano.publish()
