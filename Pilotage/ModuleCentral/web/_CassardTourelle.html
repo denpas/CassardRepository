@@ -157,6 +157,7 @@
 			var rotation = 0;
 			var elevation = 0;
 			var commandTimer = null;
+			var commandPending = false;
 			var AZIMUTH_LIMIT = 60;
 			var ELEVATION_MAX = 80;
 			var AZIMUTH_CENTER = 90;
@@ -295,18 +296,29 @@
 				elevationTrim.set(elevation);
 			}
 
+			// Cadence d'envoi pendant la manipulation : immédiatement, puis au plus
+			// toutes les 80 ms tant que la position change ; la dernière part toujours.
 			function scheduleTurret()
 			{
 				render();
 				if(commandTimer !== null)
 				{
-					clearTimeout(commandTimer);
+					commandPending = true;
+					return;
 				}
-				commandTimer = setTimeout(function()
+				sendTurretPosition();
+				commandTimer = setTimeout(flushTurret, 80);
+			}
+
+			function flushTurret()
+			{
+				commandTimer = null;
+				if(commandPending)
 				{
-					commandTimer = null;
+					commandPending = false;
 					sendTurretPosition();
-				}, 80);
+					commandTimer = setTimeout(flushTurret, 80);
+				}
 			}
 
 			// ---------- Rotation à la main ----------

@@ -137,6 +137,7 @@
 			var joystickPointer = null;
 			var joystickView = { x: 0, y: 0 };
 			var commandTimer = null;
+			var commandPending = false;
 			var canvas = document.getElementById("joystick");
 			var canvasContext = canvas.getContext("2d");
 			var staticLayer = document.createElement("canvas");
@@ -584,18 +585,29 @@
 				}
 			}
 
+			// Cadence d'envoi pendant la manipulation : immédiatement, puis au plus
+			// toutes les 80 ms tant que les valeurs changent ; la dernière part toujours.
 			function scheduleControls()
 			{
 				updateReadouts();
 				if(commandTimer !== null)
 				{
-					clearTimeout(commandTimer);
+					commandPending = true;
+					return;
 				}
-				commandTimer = setTimeout(function()
+				publishControls();
+				commandTimer = setTimeout(flushControls, 80);
+			}
+
+			function flushControls()
+			{
+				commandTimer = null;
+				if(commandPending)
 				{
-					commandTimer = null;
+					commandPending = false;
 					publishControls();
-				}, 80);
+					commandTimer = setTimeout(flushControls, 80);
+				}
 			}
 
 			function setProportion(level)
@@ -647,6 +659,7 @@
 					clearTimeout(commandTimer);
 					commandTimer = null;
 				}
+				commandPending = false;
 				publishControls();
 				throttleTrim.set(0);
 				rudderTrim.set(0);
