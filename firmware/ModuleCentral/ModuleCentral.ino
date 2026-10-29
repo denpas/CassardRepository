@@ -45,7 +45,22 @@ const byte MaxFrameLength = 64;
 const byte MaxPayloadLength = 24;
 
 WiFiServer httpServer(HttpPort);
-WebSocketsServer webSocket(WebSocketPort, "", "cassard");
+// La bibliothèque WebSockets ne fournit pas remoteIP() sur l'UNO R4 : on lit
+// l'adresse sur la connexion TCP du client, une seule fois, à sa connexion.
+class CassardWebSocketServer : public WebSocketsServer
+{
+  public:
+    using WebSocketsServer::WebSocketsServer;
+
+    uint32_t clientAddress(uint8_t num)
+    {
+      if (num >= WEBSOCKETS_SERVER_CLIENT_MAX || !_clients[num].tcp)
+        return 0;
+      return (uint32_t)_clients[num].tcp->remoteIP();
+    }
+};
+
+CassardWebSocketServer webSocket(WebSocketPort, "", "cassard");
 ArduinoLEDMatrix matrix;
 
 // Session de pilotage : un seul poste à la fois, lié à son client WebSocket.
@@ -60,14 +75,16 @@ uint8_t entropyPool[32];
 //  lignes 0-1             : un carré 2x2 par client de l'application (WebSocket), 4 au plus ;
 //  lignes 6-7             : un carré 2x2 par appareil du Wi-Fi, 4 au plus. Le module Wi-Fi
 //                           ne sait pas lister les appareils associés : on compte ceux
-//                           qui ont chargé une page depuis moins de 5 minutes ;
+//                           qui ont l'application ouverte (liaison WebSocket active,
+//                           retirés dès sa perte, ~3 s) ou qui ont chargé une page
+//                           depuis moins de 30 s ;
 //  lignes 3-4             : un bloc 2x2 qui avance d'une colonne (0 à 9) à chaque trame
 //                           valide, visible pendant 1 s après la dernière ;
 //  colonne 11, lignes 2-5 : trame refusée dans les 2 dernières secondes ;
 //  ligne 0, colonne 11    : témoin de vie, clignote à 1 Hz.
 const byte SquareColumns[4] = { 0, 3, 6, 9 };
 const byte MaxWifiDevices = 4;
-const uint32_t WifiDeviceTimeoutMs = 300000;
+const uint32_t WifiDeviceTimeoutMs = 30000;
 uint8_t matrixPixels[8][12];
 bool matrixDirty = true;
 bool sessionReady = false;      // mot de passe validé (PING signé accepté)
@@ -78,6 +95,7 @@ bool errorSeen = false;
 uint32_t lastErrorMs = 0;
 uint32_t wifiDeviceIp[MaxWifiDevices];
 uint32_t wifiDeviceSeenMs[MaxWifiDevices];
+uint32_t webSocketClientIp[WEBSOCKETS_SERVER_CLIENT_MAX];   // 0 : emplacement libre
 
 bool parseByteField(const char* frame, byte& position, byte& value)
 {
@@ -233,12 +251,26 @@ void noteWifiDevice(uint32_t ip, uint32_t now)
   wifiDeviceSeenMs[slot] = now;
 }
 
+// Appareils distincts : liaison WebSocket ouverte, ou page chargée depuis moins de 30 s.
 byte wifiDeviceCount(uint32_t now)
 {
+  uint32_t seen[WEBSOCKETS_SERVER_CLIENT_MAX + MaxWifiDevices];
   byte count = 0;
-  for (byte i = 0; i < MaxWifiDevices; i++)
-    if (wifiDeviceIp[i] != 0 && now - wifiDeviceSeenMs[i] < WifiDeviceTimeoutMs)
-      count++;
+  for (byte i = 0; i < WEBSOCKETS_SERVER_CLIENT_MAX + MaxWifiDevices; i++)
+  {
+    uint32_t ip = 0;
+    if (i < WEBSOCKETS_SERVER_CLIENT_MAX)
+      ip = webSocketClientIp[i];
+    else if (now - wifiDeviceSeenMs[i - WEBSOCKETS_SERVER_CLIENT_MAX] < WifiDeviceTimeoutMs)
+      ip = wifiDeviceIp[i - WEBSOCKETS_SERVER_CLIENT_MAX];
+    if (ip == 0)
+      continue;
+    bool known = false;
+    for (byte j = 0; j < count; j++)
+      known = known || seen[j] == ip;
+    if (!known)
+      seen[count++] = ip;
+  }
   return count;
 }
 
@@ -369,7 +401,15 @@ void onWebSocketEvent(uint8_t client, WStype_t type, uint8_t* data, size_t lengt
     case WStype_TEXT:
       handleFrame(client, data, length);
       break;
+    case WStype_CONNECTED:
+      if (client < WEBSOCKETS_SERVER_CLIENT_MAX)
+        webSocketClientIp[client] = webSocket.clientAddress(client);
+      matrixDirty = true;
+      break;
     case WStype_DISCONNECTED:
+      if (client < WEBSOCKETS_SERVER_CLIENT_MAX)
+        webSocketClientIp[client] = 0;
+      matrixDirty = true;
       // Liaison du pilote perdue (fermeture, ou plus de réponse au ping :
       // navire hors de portée) : arrêt moteur et barre au centre.
       if (client == sessionClient)

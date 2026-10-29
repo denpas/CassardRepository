@@ -153,8 +153,9 @@ def i2c_send(frame, reason=""):
 
 # ------------------------------------------------- carte maître (R4 WiFi)
 master = {"client": None, "nonce": "", "last": 0, "ready": False}
-# Appareils du Wi-Fi, comme le firmware : adresses ayant chargé une page depuis moins de 5 min.
-WIFI_DEVICE_TIMEOUT = 300
+# Appareils du Wi-Fi, comme le firmware : adresses avec une liaison WebSocket ouverte,
+# ou ayant chargé une page depuis moins de 30 s.
+WIFI_DEVICE_TIMEOUT = 30
 wifi_devices = {}
 
 
@@ -168,7 +169,9 @@ def note_wifi_device(ip):
 
 def publish_wifi():
     now = time.time()
-    emit(t="wifi", devices=sum(1 for seen in wifi_devices.values() if now - seen < WIFI_DEVICE_TIMEOUT))
+    devices = {ip for ip, seen in wifi_devices.items() if now - seen < WIFI_DEVICE_TIMEOUT}
+    devices |= {handler.client_address[0] for handler in list(clients.values())}
+    emit(t="wifi", devices=len(devices))
 clients = {}
 next_id = [0]
 LIMITS = {(1, 4): (5, (180, 80)), (2, 12): (4, (100,)), (2, 13): (4, (100,)), (2, 14): (3, ()),
@@ -275,6 +278,7 @@ class WebSocketHandler(socketserver.StreamRequestHandler):
             self.client_id = next_id[0]
             clients[self.client_id] = self
             publish_master()
+            publish_wifi()
         buffer = ""
         try:
             while True:
@@ -305,6 +309,7 @@ class WebSocketHandler(socketserver.StreamRequestHandler):
                 serial("Liaison du pilote perdue : arret de securite")
                 end_session("liaison du pilote perdue")
             publish_master()
+            publish_wifi()
 
     def cut_link(self):
         """Simule la perte du Wi-Fi : plus rien ne passe, le ping échoue."""
@@ -408,8 +413,9 @@ if __name__ == "__main__":
 
     def expire_wifi_devices():
         while True:
-            time.sleep(5)
-            publish_wifi()
+            time.sleep(2)
+            with lock:
+                publish_wifi()
     threading.Thread(target=expire_wifi_devices, daemon=True).start()
     print(f"Simulation : http://localhost:{HTTP_PORT}/simulation.html  (mot de passe de démo {PASSWORD!r})", flush=True)
     try:

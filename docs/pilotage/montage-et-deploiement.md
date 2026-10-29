@@ -81,13 +81,16 @@ jamais le pilotage.
 | 0-1 | Application | un carre 2x2 par client connecte a l'application (WebSocket), 4 au plus |
 | 3-4 | Trames | un bloc 2x2 qui avance d'une colonne a chaque trame valide recue (sa vitesse suit le debit), visible 1 s apres la derniere |
 | 2-5, colonne 11 | Erreur | trait vertical allume 2 s apres une trame refusee (signature, rejeu, trame non signee ou trop longue, commande invalide) |
-| 6-7 | Wi-Fi | un carre 2x2 par appareil du Wi-Fi, 4 au plus |
+| 6-7 | Wi-Fi | un carre 2x2 par appareil du Wi-Fi (application ouverte, ou page chargee depuis moins de 30 s), 4 au plus |
 | 0, colonne 11 | Vie | pixel qui clignote a 1 Hz : un pixel fige signale un firmware bloque |
 
 Le module Wi-Fi du R4 ne sait pas lister les appareils associes a son point
-d'acces : la zone Wi-Fi compte les appareils (adresses IP) qui ont charge une
-page de l'application depuis moins de 5 minutes. Un telephone associe au Wi-Fi
-qui n'a pas ouvert l'application n'y apparait pas.
+d'acces : la zone Wi-Fi compte les appareils (adresses IP) qui ont
+l'application ouverte (liaison WebSocket active) ou qui ont charge une page
+depuis moins de 30 s. Un appareil qui quitte le Wi-Fi disparait des que la carte
+detecte la perte de sa liaison (environ 3 s, ou 30 s s'il n'avait charge
+qu'une page). Un telephone associe au Wi-Fi sans ouvrir l'application n'y
+apparait pas.
 
 Mesure sur la carte : un tour de `loop()` dure environ 5 ms (190 tours/s),
 dont l'essentiel en dialogue avec le module Wi-Fi ; le serveur de pages n'est
