@@ -1,0 +1,18 @@
+Repères;Qté;Valeur;Empreinte;Montage;Référence fabricant;LCSC;Description
+C1;1;470uF 10V;CP_Radial_D6.3mm_P2.50mm;Traversant;Générique 105°C low-ESR;C134793 (à vérifier);Réservoir rail servos, électrolytique 6,3x11 mm
+C2;1;10uF 25V X5R;C_0805_2012Metric;CMS;Samsung CL21A106KAYNNNE;C15850;Découplage +5V Nano
+D1;1;B5819W;D_SOD-123;CMS;Changjiang B5819W;C8598;Schottky 40V 1A (option JP1)
+D2;1;LED verte;LED_0603_1608Metric;CMS;Hubei KENTO 19-217/GHC;C72043;Témoin présence alim servos
+D3;1;LED jaune;LED_0603_1608Metric;CMS;Hubei KENTO 19-217/Y5C;C72038 (à vérifier);Témoin d'activité : commande transmise à un servo
+J1;1;Jack DC 5.5x2.1mm;BarrelJack_CUI_PJ-002A_Horizontal;Traversant;CUI/Same Sky PJ-002A;C2961147 (PJ-002AH, à vérifier);Alimentation servos 4,8-8,4 V, centre +
+J2;1;Servo 1;PinHeader_1x03_P2.54mm_Vertical;Traversant;Générique;C35464 (à vérifier);Barrette mâle 1x3, ordre S / + / -
+J3;1;Servo 2;PinHeader_1x03_P2.54mm_Vertical;Traversant;Générique;C35464 (à vérifier);Barrette mâle 1x3, ordre S / + / -
+J4;1;I2C (GND/+5V/SDA/SCL);JST_XH_B4B-XH-A_1x04_P2.50mm_Vertical;Traversant;JST B4B-XH-A;C158012 (à vérifier);Connecteur JST XH 4 points
+JP1,JP2;2;SJ ouvert;SolderJumper-2_P1.3mm_Open;Aucun (pont à souder);;;Pont à souder : alim. Nano depuis rail servo (via D1)
+Q1;1;AO3401A;SOT-23;CMS;Alpha&Omega AO3401A;C15127;P-MOSFET -30V -4A, protection inversion de polarité
+R1;1;10k;R_0603_1608Metric;CMS;UNI-ROYAL 0603WAF;C25804;Rappel grille Q1
+R2,R7;2;1k;R_0603_1608Metric;CMS;UNI-ROYAL 0603WAF;C21190;Limitation LED
+R3,R4;2;4k7;R_0603_1608Metric;CMS;UNI-ROYAL 0603WAF;C23162;Pull-up SDA (via JP2)
+R5,R6;2;220R;R_0603_1608Metric;CMS;UNI-ROYAL 0603WAF;C22962;Protection sortie servo 1
+U1;1;Arduino Nano v3 (ATmega328P);2x PinSocket_1x15_P2.54mm;Traversant;Arduino A000005 (ou compatible);;Module Arduino Nano, monté sur 2 barrettes femelles 1x15
+U1-SOCK;2;Barrette femelle 1x15 2,54 mm (x2);PinSocket_1x15_P2.54mm_Vertical;Traversant;Générique;C2977589 (à vérifier);Support du Nano (hauteur 8,5 mm)

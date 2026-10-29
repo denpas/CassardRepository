@@ -1,0 +1,19 @@
+%TF.GenerationSoftware,Claude,servo_i2c_gen,1.1*%
+%TF.CreationDate,2026-10-27T09:00:00*%
+%TF.ProjectId,SERVO_I2C_NANO,0001,rev1.1*%
+%TF.SameCoordinates,Original*%
+%TF.FileFunction,Profile,NP*%
+%TF.FilePolarity,Positive*%
+%FSLAX46Y46*%
+%MOMM*%
+G04 Generated for SERVO-I2C-NANO*
+%ADD10C,0.100000*%
+%LPD*%
+G01*
+D10*
+X0Y0D02*
+X37500000Y0D01*
+X37500000Y49000000D01*
+X0Y49000000D01*
+X0Y0D01*
+M02*
