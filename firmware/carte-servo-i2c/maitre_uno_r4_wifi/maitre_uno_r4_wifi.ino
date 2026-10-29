@@ -114,8 +114,8 @@ static void traiterCommande(uint8_t client, const String& brut) {
 static void surEvenementWs(uint8_t client, WStype_t type, uint8_t* donnees, size_t longueur) {
   switch (type) {
     case WStype_CONNECTED:
-      Serial.print(F("WebSocket : client ")); Serial.print(client);
-      Serial.print(F(" depuis ")); Serial.println(serveurWs.remoteIP(client));
+      // remoteIP() n'existe pas dans la bibliothèque WebSockets pour l'UNO R4 (WiFiS3).
+      Serial.print(F("WebSocket : client ")); Serial.print(client); Serial.println(F(" connecte"));
       break;
     case WStype_DISCONNECTED:
       Serial.print(F("WebSocket : client ")); Serial.print(client); Serial.println(F(" deconnecte"));

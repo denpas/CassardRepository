@@ -49,5 +49,6 @@ MAÎTRE UNO R4 WIFI
 VÉRIFICATIONS EFFECTUÉES
   - DRC scripté : isolements >= 0,20 mm, cuivre/bord >= 0,40 mm, connectivité de tous les nets
   - Gerber et perçages relus avec un lecteur indépendant (gerbonara)
-  - Firmwares carte et maître : contrôle syntaxique C++ ; compilation finale à faire dans l'IDE Arduino
+  - Firmwares compilés avec arduino-cli (29/10/2026) : servo_i2c_nano et test_maitre (Nano, bibliothèque
+    Servo 1.3.0), maitre_uno_r4_wifi (UNO R4 WiFi, WebSockets 2.7.2)
   - Codes LCSC marqués « à vérifier » : à confirmer au moment de la commande
