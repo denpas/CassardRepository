@@ -181,11 +181,23 @@
 					ws.onopen = function()
 					{
 						setLinkState("Connecté", true);
+						// Le navire repart de l'arrêt (le central le met en sécurité à chaque
+						// session) : pupitre au neutre, puis réactivité affichée envoyée,
+						// sans quoi la carte de propulsion garde son ancien réglage.
+						power = 0;
+						direction = 0;
+						updateReadouts();
+						publishControls();
+						sendCommand(18, proportion);
 					};
 					ws.onclose = function()
 					{
 						ws = null;
 						setLinkState("Non connecté", false);
+						// Liaison perdue : le central arrête le navire, le pupitre suit.
+						power = 0;
+						direction = 0;
+						updateReadouts();
 					};
 					ws.onerror = function()
 					{

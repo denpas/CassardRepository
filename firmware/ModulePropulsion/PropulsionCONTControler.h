@@ -149,9 +149,10 @@ void PropulsionCONTControler::ProportionalModule(	int enginePower,
 		return;
 	}
 
-	int turningAdjustment = turningAngle * proportionalMode * 2 / 100;
-	if (enginePower < 0)
-		turningAdjustment = -turningAdjustment;
+	// Formule de SimulationModuleProportionnel.xlsx : puissance +/- angle x (proportion x 2 / puissance).
+	// L'ecart grandit quand la vitesse baisse (virage plus serre a faible allure) et change de
+	// signe avec la puissance, ce qui gere la marche arriere.
+	int turningAdjustment = turningAngle * proportionalMode * 2 / enginePower;
 	*leftEnginePower = constrain(enginePower + turningAdjustment, -100, 100);
 	*rightEnginePower = constrain(enginePower - turningAdjustment, -100, 100);
 }

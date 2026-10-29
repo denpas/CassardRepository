@@ -80,9 +80,8 @@ class PropulsionNano:
     def mix(self, power, angle):
         if power == 0:
             return 0, 0
-        adjust = self.c_div(angle * self.mode * 2, 100)
-        if power < 0:
-            adjust = -adjust
+        # SimulationModuleProportionnel.xlsx : puissance +/- angle x (proportion x 2 / puissance)
+        adjust = self.c_div(angle * self.mode * 2, power)
         clamp = lambda v: max(-100, min(100, v))
         return clamp(power + adjust), clamp(power - adjust)
 
@@ -309,6 +308,12 @@ class HttpHandler(http.server.SimpleHTTPRequestHandler):
     def log_message(self, *args):
         pass
 
+    def end_headers(self):
+        # Pas de cache : une page modifiée dans web/ doit apparaître au rechargement,
+        # y compris dans le cadre iPhone du tableau de bord.
+        self.send_header("Cache-Control", "no-store")
+        super().end_headers()
+
     def do_GET(self):
         if self.path.startswith("/simulation.html"):
             body = DASHBOARD.read_bytes()
@@ -331,7 +336,6 @@ class HttpHandler(http.server.SimpleHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-Type", "application/javascript; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
-        self.send_header("Cache-Control", "no-cache")
         self.end_headers()
         self.wfile.write(body)
 
@@ -347,7 +351,6 @@ class HttpHandler(http.server.SimpleHTTPRequestHandler):
     def stream(self):
         self.send_response(200)
         self.send_header("Content-Type", "text/event-stream")
-        self.send_header("Cache-Control", "no-cache")
         self.end_headers()
         q = queue.Queue()
         subscribers.append(q)

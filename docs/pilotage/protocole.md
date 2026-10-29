@@ -64,7 +64,30 @@ esclaves verifient aussi leur adresse logique, la commande et la longueur.
 
 ## Melange de propulsion
 
-Le niveau proportionnel ajoute une correction de direction au niveau moteur.
-Cette correction depend de l'angle et du niveau choisi et les deux puissances
-resultantes sont bornees a -100..100 %. En marche arriere, le signe choisit le
-sens du moteur et la PWM utilise la valeur absolue de la puissance.
+Le niveau proportionnel (reactivite, 0 a 5, commande 18) ajoute aux deux
+moteurs un ecart qui aide le navire a tourner, selon la formule du tableur
+`docs/propulsion/SimulationModuleProportionnel.xlsx` :
+
+```text
+ecart          = angle x reactivite x 2 / puissance   (division entiere)
+moteur gauche  = puissance + ecart                     borne a -100..100 %
+moteur droit   = puissance - ecart
+```
+
+L'angle est positif a tribord, negatif a babord. L'ecart grandit quand la
+vitesse baisse : a faible allure, le moteur interieur peut s'inverser et le
+navire tourne presque sur place. Il change de signe avec la puissance, ce qui
+gere la marche arriere. A puissance nulle, les deux moteurs sont arretes. Avec
+la reactivite 0, les deux moteurs recoivent la meme puissance.
+
+| Puissance | Barre | Reactivite | Gauche | Droit |
+| ---: | ---: | ---: | ---: | ---: |
+| 100 % | 90° tribord | 3 | 100 % | 95 % |
+| 50 % | 90° tribord | 3 | 60 % | 40 % |
+| 20 % | 90° tribord | 3 | 47 % | -7 % |
+| -20 % | 90° tribord | 3 | -47 % | 7 % |
+| 50 % | 90° tribord | 5 | 68 % | 32 % |
+
+La PWM utilise la valeur absolue de chaque puissance (`|p| x 190 / 100`), le
+signe choisit le sens du moteur. L'interface envoie la reactivite affichee a
+chaque ouverture de liaison, pour que la carte de propulsion l'applique.
