@@ -16,6 +16,7 @@ Pilotage/
   ModulePropulsion/              Sketch de propulsion (I2C 2)
   ModuleTourelle/                Sketch de tourelle (I2C 1)
   libraries/CassardControl/      Bibliotheque Arduino partagee
+  Simulateur/                    Simulation de l'interface et des cartes, sans materiel
   tools/                         Generation de cle, des pages embarquees, tests
   Archive/Legacy/                Anciens prototypes non maintenus (dont PHPoC)
   docs/                          Protocole et deploiement
@@ -42,6 +43,9 @@ Le schema des composants et des flux est disponible dans
 [docs/architecture.md](./docs/architecture.md).
 La securisation du pilotage (mot de passe, trames signees, Wi-Fi, arret sur perte de liaison) et
 sa mise en service sont decrites dans [docs/securite.md](./docs/securite.md).
+Le [simulateur](./Simulateur/README.md) fait tourner l'interface reelle face a
+une carte maitre et deux cartes Nano simulees, avec un tableau de bord de leurs
+reactions : `python3 Pilotage/Simulateur/simulateur.py`.
 Les ecrans de pilotage et leurs limites sont decrits dans
 [docs/interface-pilotage.md](./docs/interface-pilotage.md); une video de
 simulation est disponible dans [docs/interface-pilotage-demo.mp4](./docs/interface-pilotage-demo.mp4).

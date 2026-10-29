@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulation Cassard</title>
+<style>
+:root {
+	--bg: #0e1013; --card: #181b20; --line: #2a2f37; --ink: #e8ecf0; --muted: #8b94a0;
+	--orange: #ff6a1a; --green: #3ddc84; --red: #ff4d4d; --blue: #57a6ff; --pcb: #0f6e6a;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: radial-gradient(ellipse at 30% 0, #1c2129, var(--bg) 60%); color: var(--ink);
+	font: 13px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; min-height: 100vh; }
+header { display: flex; align-items: center; gap: 16px; padding: 12px 20px; border-bottom: 1px solid var(--line); }
+header h1 { font-size: 15px; margin: 0; letter-spacing: .04em; }
+header p { margin: 0; color: var(--muted); flex: 1; }
+button { font: 600 12px inherit; border: 1px solid #5a3420; background: #2a1a12; color: #ffb38a; border-radius: 8px;
+	padding: 7px 12px; cursor: pointer; }
+button:hover { background: #3a2216; }
+main { display: grid; grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr); gap: 16px; padding: 16px 20px; align-items: start; }
+.phone { position: sticky; top: 16px; }
+.phone-frame { background: #000; border-radius: 52px; padding: 12px; box-shadow: 0 0 0 2px #3a3f47, 0 20px 50px rgba(0,0,0,.6);
+	transform-origin: top left; }
+.phone-frame iframe { width: 390px; height: 844px; border: 0; border-radius: 42px; display: block; background: #101215; }
+.phone-caption { color: var(--muted); text-align: center; margin-top: 8px; font-size: 12px; }
+.col { display: grid; gap: 16px; min-width: 0; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px; min-width: 0; }
+.card h2 { margin: 0 0 10px; font-size: 13px; display: flex; align-items: center; gap: 8px; }
+.card h2 small { color: var(--muted); font-weight: 500; }
+.tag { font: 600 10px ui-monospace, monospace; padding: 2px 6px; border-radius: 4px; background: #23303f; color: var(--blue); }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; margin-bottom: 10px; }
+.kv dt { color: var(--muted); } .kv dd { margin: 0; font-variant-numeric: tabular-nums; }
+.board { display: flex; gap: 14px; align-items: center; background: linear-gradient(160deg, #13807b, var(--pcb)); border-radius: 10px; padding: 12px;
+	box-shadow: inset 0 1px rgba(255,255,255,.15); margin-bottom: 10px; }
+.board-label { font: 700 11px ui-monospace, monospace; color: #d7fffb; letter-spacing: .06em; }
+.board-label span { display: block; font-weight: 500; opacity: .75; }
+.matrix { display: grid; grid-template-columns: repeat(12, 9px); gap: 3px; padding: 7px; background: #0a1514; border-radius: 6px; }
+.matrix i { width: 9px; height: 9px; border-radius: 50%; background: #2a1012; }
+.matrix i.on { background: #ff3b3b; box-shadow: 0 0 6px #ff3b3b; }
+.log { font: 11px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; background: #0b0d10; border: 1px solid var(--line); border-radius: 8px;
+	padding: 8px; height: 150px; overflow: auto; white-space: pre-wrap; word-break: break-all; }
+.log .in { color: var(--blue); } .log .out { color: var(--green); } .log .info { color: var(--orange); }
+.log .mac { color: #c792ea; } .log .t { color: #59616d; }
+.serial { height: 92px; color: #b8f5c8; }
+.bus { position: relative; height: 26px; border-radius: 6px; background: repeating-linear-gradient(90deg, #232831 0 8px, #1d2128 8px 16px); margin-bottom: 10px; overflow: hidden; }
+.bus b { position: absolute; top: 4px; left: -120px; font: 600 11px ui-monospace, monospace; background: var(--orange); color: #1a0d05;
+	padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
+.bus b.go { transition: left .45s ease-in; left: calc(100% + 10px); }
+.leds { display: flex; gap: 12px; margin-left: auto; font-size: 11px; color: var(--muted); }
+.led { display: inline-flex; align-items: center; gap: 5px; }
+.led i { width: 10px; height: 10px; border-radius: 50%; background: #333; }
+.led.ok i.on { background: var(--green); box-shadow: 0 0 8px var(--green); }
+.led.err i.on { background: var(--red); box-shadow: 0 0 8px var(--red); }
+.motors { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; align-items: center; }
+.motor { text-align: center; }
+.motor svg, .servo svg { width: 100%; max-width: 130px; height: auto; display: block; margin: 0 auto; }
+.motor .prop { transform-origin: 50px 50px; animation: spin linear infinite; animation-play-state: paused; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.motor strong, .servo strong { display: block; font-size: 12px; margin-top: 4px; }
+.motor span, .servo span { color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.rudder-blade { transition: transform .25s ease-out; }
+.needle { transition: transform .3s ease-out; }
+.servos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.flash { animation: flash .5s; } @keyframes flash { from { background: #2c2116; } to { background: var(--card); } }
+.howto { color: var(--muted); font-size: 12px; margin: 0 0 8px; }
+@media (max-width: 1250px) { main { grid-template-columns: auto minmax(0, 1fr); } .col2 { grid-column: 2; } }
+</style>
+</head>
+<body>
+<header>
+	<h1>SIMULATION · PILOTAGE CASSARD</h1>
+	<p>Application web réelle · carte maître UNO R4 WiFi et cartes Nano simulées d'après leur firmware</p>
+	<button id="cut" type="button" title="Plus aucune trame ne passe ; la carte le détecte par le ping (~3 s)">Couper le Wi-Fi du téléphone</button>
+</header>
+<main>
+	<section class="phone">
+		<div class="phone-frame" id="phone"><iframe id="app" src="/index.html" title="Application de pilotage"></iframe></div>
+		<div class="phone-caption">iPhone 16e · mot de passe de démo <b>cassard demo 2026</b></div>
+	</section>
+
+	<div class="col">
+		<section class="card" id="card-master">
+			<h2>Carte maître <small>Arduino UNO R4 WiFi</small></h2>
+			<div class="board">
+				<div class="matrix" id="matrix"></div>
+				<div class="board-label">UNO R4 WiFi<span id="matrix-label">aucun pilote</span></div>
+			</div>
+			<dl class="kv">
+				<dt>Wi-Fi</dt><dd>point d'accès « cassard » (WPA2) · 192.168.4.1</dd>
+				<dt>Postes connectés</dt><dd id="m-clients">—</dd>
+				<dt>Session de pilotage</dt><dd id="m-session">aucune</dd>
+			</dl>
+			<div class="log serial" id="serial"></div>
+		</section>
+		<section class="card">
+			<h2>Échanges WebSocket <span class="tag">ws :81</span></h2>
+			<p class="howto"><span style="color:var(--blue)">→ téléphone vers carte</span> · <span style="color:var(--green)">← carte vers téléphone</span> · <span style="color:#c792ea">signature HMAC</span></p>
+			<div class="log" id="ws" style="height:250px"></div>
+		</section>
+	</div>
+
+	<div class="col col2">
+		<section class="card">
+			<h2>Bus I2C <span class="tag">maître → esclaves</span></h2>
+			<div class="bus" id="bus"></div>
+			<div class="log" id="i2c" style="height:110px"></div>
+		</section>
+		<section class="card" id="card-prop">
+			<h2>Carte Nano propulsion <span class="tag">I2C 2</span>
+				<span class="leds"><span class="led ok"><i id="p-ok" class="on"></i>OK</span><span class="led err"><i id="p-err"></i>erreur</span></span></h2>
+			<div class="motors">
+				<div class="motor">
+					<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#0b0d10" stroke="#2a2f37"/>
+						<g class="prop" id="prop-left"><path d="M50 50 C44 30 46 10 50 8 C54 10 56 30 50 50Z M50 50 C66 58 84 70 85 74 C81 77 62 64 50 50Z M50 50 C34 58 16 70 15 74 C19 77 38 64 50 50Z" fill="#c9a35a"/></g>
+						<circle cx="50" cy="50" r="6" fill="#555"/></svg>
+					<strong>Moteur gauche</strong><span id="m-left">arrêt</span>
+				</div>
+				<div class="motor">
+					<svg viewBox="0 0 100 130"><path d="M18 0 L18 70 Q18 100 50 104 Q82 100 82 70 L82 0" fill="#1d2128" stroke="#3a414c"/>
+						<line x1="50" y1="8" x2="50" y2="96" stroke="#2a2f37" stroke-dasharray="3 3"/>
+						<g class="rudder-blade" id="rudder" style="transform-origin:50px 104px"><rect x="47" y="104" width="6" height="22" rx="3" fill="var(--orange)"/></g>
+						<circle cx="50" cy="104" r="3" fill="#ddd"/></svg>
+					<strong>Servo de barre</strong><span id="m-rudder">90° · axe</span>
+				</div>
+				<div class="motor">
+					<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#0b0d10" stroke="#2a2f37"/>
+						<g class="prop" id="prop-right"><path d="M50 50 C44 30 46 10 50 8 C54 10 56 30 50 50Z M50 50 C66 58 84 70 85 74 C81 77 62 64 50 50Z M50 50 C34 58 16 70 15 74 C19 77 38 64 50 50Z" fill="#c9a35a"/></g>
+						<circle cx="50" cy="50" r="6" fill="#555"/></svg>
+					<strong>Moteur droit</strong><span id="m-right">arrêt</span>
+				</div>
+			</div>
+			<dl class="kv" style="margin:10px 0 0">
+				<dt>Consigne</dt><dd id="p-cmd">puissance 0 % · virage 0° · réactivité 0</dd>
+			</dl>
+		</section>
+		<section class="card" id="card-tour">
+			<h2>Carte Nano tourelle <span class="tag">I2C 1</span>
+				<span class="leds"><span class="led ok"><i id="t-ok" class="on"></i>OK</span><span class="led err"><i id="t-err"></i>erreur</span></span></h2>
+			<div class="servos">
+				<div class="servo">
+					<svg viewBox="0 0 120 70"><path d="M10 62 A50 50 0 0 1 110 62" fill="none" stroke="#2a2f37" stroke-width="8"/>
+						<path d="M24.6 26.6 A50 50 0 0 1 95.4 26.6" fill="none" stroke="#3b2a1e" stroke-width="8"/>
+						<g class="needle" id="az-needle" style="transform-origin:60px 62px"><line x1="60" y1="62" x2="60" y2="18" stroke="var(--orange)" stroke-width="3" stroke-linecap="round"/></g>
+						<circle cx="60" cy="62" r="5" fill="#ddd"/><text x="60" y="10" fill="#8b94a0" font-size="8" text-anchor="middle">90 = axe</text></svg>
+					<strong>Servo d'azimut</strong><span id="t-az">90</span>
+				</div>
+				<div class="servo">
+					<!-- Arc centré sur le pivot (20, 62) : de 0° (horizontale) à 80° -->
+					<svg viewBox="0 0 120 70"><path d="M72 62 A52 52 0 0 0 29.0 10.8" fill="none" stroke="#2a2f37" stroke-width="8"/>
+						<text x="76" y="66" fill="#8b94a0" font-size="7">0°</text><text x="34" y="9" fill="#8b94a0" font-size="7">80°</text>
+						<g class="needle" id="el-needle" style="transform-origin:20px 62px"><line x1="20" y1="62" x2="72" y2="62" stroke="var(--orange)" stroke-width="3" stroke-linecap="round"/></g>
+						<circle cx="20" cy="62" r="5" fill="#ddd"/></svg>
+					<strong>Servo d'élévation</strong><span id="t-el">0</span>
+				</div>
+			</div>
+		</section>
+	</div>
+</main>
+<script>
+var FRAMES = {
+	idle: ["000000000000", "000000000000", "000000000000", "000001100000", "000001100000", "000000000000", "000000000000", "000000000000"],
+	pilot: ["111111111111", "100000000001", "100000000001", "100000000001", "100000000001", "100000000001", "100000000001", "111111111111"],
+	command: ["111111111111", "100000000001", "100000000001", "100001100001", "100001100001", "100000000001", "100000000001", "111111111111"]
+};
+var MATRIX_LABEL = { idle: "aucun pilote", pilot: "pilote connecté", command: "commande transmise" };
+var matrixCells = [];
+for(var i = 0; i < 96; i++)
+{
+	matrixCells.push(document.getElementById("matrix").appendChild(document.createElement("i")));
+}
+
+function time(ms)
+{
+	var d = new Date(ms);
+	return d.toTimeString().slice(0, 8) + "." + String(d.getMilliseconds()).padStart(3, "0");
+}
+
+function append(id, html, max)
+{
+	var log = document.getElementById(id);
+	var line = document.createElement("div");
+	line.innerHTML = html;
+	log.appendChild(line);
+	while(log.children.length > (max || 60))
+	{
+		log.removeChild(log.firstChild);
+	}
+	log.scrollTop = log.scrollHeight;
+}
+
+function escapeHtml(text)
+{
+	return String(text).replace(/[&<>]/g, function(c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]; });
+}
+
+function flash(id)
+{
+	var element = document.getElementById(id);
+	element.classList.remove("flash");
+	void element.offsetWidth;
+	element.classList.add("flash");
+}
+
+function blinkError(prefix)
+{
+	var ok = document.getElementById(prefix + "-ok");
+	var err = document.getElementById(prefix + "-err");
+	ok.classList.remove("on");
+	var count = 0;
+	var timer = setInterval(function()
+	{
+		err.classList.toggle("on");
+		if(++count >= 4)
+		{
+			clearInterval(timer);
+			err.classList.remove("on");
+		}
+	}, 120);
+}
+
+function setMotor(side, motor)
+{
+	var prop = document.getElementById("prop-" + side);
+	var label = document.getElementById("m-" + side);
+	if(motor.pwm === 0)
+	{
+		prop.style.animationPlayState = "paused";
+		label.textContent = "arrêt · PWM 0";
+		return;
+	}
+	// Gauche : avant = DIR LOW ; droite : avant = DIR HIGH (moteurs en miroir).
+	var forward = motor.power > 0;
+	prop.style.animationDuration = (60 / motor.pwm).toFixed(2) + "s";
+	prop.style.animationDirection = (side === "left") === forward ? "normal" : "reverse";
+	prop.style.animationPlayState = "running";
+	label.textContent = (forward ? "avant " : "arrière ") + Math.abs(motor.power) + " % · PWM " + motor.pwm + " · DIR " + (motor.dir ? "HIGH" : "LOW");
+}
+
+var handlers = {
+	serial: function(e)
+	{
+		append("serial", '<span class="t">' + time(e.ms) + "</span> " + escapeHtml(e.text), 30);
+	},
+	matrix: function(e)
+	{
+		var rows = FRAMES[e.frame];
+		for(var r = 0; r < 8; r++)
+		{
+			for(var c = 0; c < 12; c++)
+			{
+				matrixCells[r * 12 + c].classList.toggle("on", rows[r][c] === "1");
+			}
+		}
+		document.getElementById("matrix-label").textContent = MATRIX_LABEL[e.frame];
+	},
+	master: function(e)
+	{
+		document.getElementById("m-clients").textContent = e.clients.length ? e.clients.map(function(c) { return "poste " + c; }).join(", ") : "aucun";
+		document.getElementById("m-session").textContent = e.session ? "poste " + e.session + " · dernière séquence " + e.seq : "aucune";
+	},
+	ws: function(e)
+	{
+		var text = escapeHtml(e.text).replace(/\|([0-9a-f]{16})$/, '|<span class="mac">$1</span>');
+		var arrow = e.dir === "in" ? "→" : (e.dir === "out" ? "←" : "⚠");
+		append("ws", '<span class="t">' + time(e.ms) + '</span> <span class="' + e.dir + '">' + arrow + " poste " + e.client + "  " + text + "</span>", 80);
+	},
+	i2c: function(e)
+	{
+		var bytes = e.bytes.join(",");
+		append("i2c", '<span class="t">' + time(e.ms) + "</span> → adresse " + e.addr + "  [" + bytes + "]  " + e.label +
+			(e.reason ? '  <span class="info">(sécurité : ' + escapeHtml(e.reason) + ")</span>" : ""), 40);
+		var bus = document.getElementById("bus");
+		var packet = bus.appendChild(document.createElement("b"));
+		packet.textContent = "→ " + e.addr + " : " + bytes;
+		requestAnimationFrame(function() { requestAnimationFrame(function() { packet.classList.add("go"); }); });
+		setTimeout(function() { packet.remove(); }, 600);
+		flash(e.addr === 2 ? "card-prop" : "card-tour");
+	},
+	nano: function(e)
+	{
+		var s = e.state;
+		var prefix = e.addr === 2 ? "p" : "t";
+		if(s.error)
+		{
+			blinkError(prefix);
+		}
+		else
+		{
+			document.getElementById(prefix + "-ok").classList.add("on");
+		}
+		if(e.addr === 2)
+		{
+			setMotor("left", s.left);
+			setMotor("right", s.right);
+			document.getElementById("rudder").style.transform = "rotate(" + (-(s.rudder - 90)) + "deg)";
+			document.getElementById("m-rudder").textContent = "servo " + s.rudder + "° · " +
+				(s.rudder === 90 ? "axe" : Math.abs(s.rudder - 90) + "° " + (s.rudder > 90 ? "tribord" : "bâbord"));
+			document.getElementById("p-cmd").textContent = "puissance " + s.power + " % · virage " + s.angle + "° · réactivité " + s.mode +
+				(s.mode && s.power && s.angle ? " (mélange : gauche " + s.left.power + " %, droite " + s.right.power + " %)" : "");
+		}
+		else
+		{
+			document.getElementById("az-needle").style.transform = "rotate(" + (s.azimut - 90) + "deg)";
+			document.getElementById("el-needle").style.transform = "rotate(" + (-s.elevation) + "deg)";
+			document.getElementById("t-az").textContent = "servo " + s.azimut + " · " +
+				(s.azimut === 90 ? "axe du navire" : Math.abs(s.azimut - 90) + "° " + (s.azimut > 90 ? "tribord" : "bâbord"));
+			document.getElementById("t-el").textContent = "servo " + s.elevation + " · canon à " + s.elevation + "°";
+		}
+	}
+};
+
+new EventSource("/evenements").onmessage = function(message)
+{
+	var event = JSON.parse(message.data);
+	if(handlers[event.t])
+	{
+		handlers[event.t](event);
+	}
+};
+
+document.getElementById("cut").addEventListener("click", function()
+{
+	fetch("/sim/couper", { method: "POST" });
+});
+
+function fitPhone()
+{
+	var scale = Math.min(1, (window.innerHeight - 110) / 868);
+	var frame = document.getElementById("phone");
+	frame.style.transform = "scale(" + scale + ")";
+	frame.parentElement.style.width = (414 * scale) + "px";
+	frame.parentElement.style.height = (868 * scale + 30) + "px";
+}
+window.addEventListener("resize", fitPhone);
+fitPhone();
+</script>
+</body>
+</html>
