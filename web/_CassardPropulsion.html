@@ -143,9 +143,11 @@
 			var staticLayer = document.createElement("canvas");
 			var JOYSTICK_SIZE = 300;
 			var JOYSTICK_CENTER = 150;
-			var WELL_RADIUS = 104;
+			// Grille carrée : chaque axe a toute sa course, y compris en diagonale.
+			var WELL_HALF = 104;      // demi-côté de l'ouverture carrée
+			var FRAME_HALF = 124;     // demi-côté du cadre aluminium
 			var KNOB_RADIUS = 40;
-			var JOYSTICK_TRAVEL = WELL_RADIUS - KNOB_RADIUS - 4;
+			var JOYSTICK_TRAVEL = WELL_HALF - KNOB_RADIUS - 4;
 
 			function sendCommand(command, value)
 			{
@@ -278,57 +280,60 @@
 				drawScrew(context, 30, 270);
 				drawScrew(context, 270, 270);
 
-				// Graduations sérigraphiées sur la platine
+				// Graduations sérigraphiées le long des côtés, alignées sur la course du
+				// pommeau : tous les 10 %, plus marquées à 0, ±50 et ±100 %.
 				context.strokeStyle = "rgba(233,237,240,0.42)";
 				context.lineCap = "butt";
-				for(var degree = 0; degree < 360; degree += 5)
+				for(var side = 0; side < 4; side++)
 				{
-					var angle = degree * Math.PI / 180;
-					var isMajor = degree % 45 === 0;
-					var isMedium = degree % 15 === 0;
-					var inner = 133;
-					var outer = isMajor ? 142 : (isMedium ? 139 : 136);
-					context.lineWidth = isMajor ? 1.6 : 0.9;
-					context.beginPath();
-					context.moveTo(c + Math.cos(angle) * inner, c + Math.sin(angle) * inner);
-					context.lineTo(c + Math.cos(angle) * outer, c + Math.sin(angle) * outer);
-					context.stroke();
+					context.save();
+					context.translate(c, c);
+					context.rotate(side * Math.PI / 2);
+					for(var step = -10; step <= 10; step++)
+					{
+						var position = step * JOYSTICK_TRAVEL / 10;
+						var isMajor = step % 10 === 0;
+						var isMedium = step % 5 === 0;
+						context.lineWidth = isMajor ? 1.6 : 0.9;
+						context.beginPath();
+						context.moveTo(position, -FRAME_HALF - 2);
+						context.lineTo(position, -FRAME_HALF - (isMajor ? 11 : (isMedium ? 8 : 5)));
+						context.stroke();
+					}
+					context.restore();
 				}
 
-				// Bague aluminium brossé
+				// Cadre carré en aluminium brossé
 				context.shadowColor = "rgba(0,0,0,0.7)";
 				context.shadowBlur = 8;
 				context.shadowOffsetY = 3;
-				context.fillStyle = metalGradient(context, 130);
-				context.beginPath();
-				context.arc(c, c, 129, 0, Math.PI * 2);
+				context.fillStyle = metalGradient(context, FRAME_HALF);
+				roundedRectPath(context, c - FRAME_HALF, c - FRAME_HALF, FRAME_HALF * 2, FRAME_HALF * 2, 34);
 				context.fill();
 				context.shadowColor = "transparent";
 
 				context.strokeStyle = "rgba(255,255,255,0.08)";
 				context.lineWidth = 0.6;
-				for(var groove = WELL_RADIUS + 3; groove < 128; groove += 2.2)
+				for(var groove = WELL_HALF + 3; groove < FRAME_HALF - 1; groove += 2.2)
 				{
-					context.beginPath();
-					context.arc(c, c, groove, 0, Math.PI * 2);
+					roundedRectPath(context, c - groove, c - groove, groove * 2, groove * 2, 18 + (groove - WELL_HALF) * 0.8);
 					context.stroke();
 				}
 				context.strokeStyle = "rgba(0,0,0,0.45)";
 				context.lineWidth = 1;
-				context.beginPath();
-				context.arc(c, c, 129, 0, Math.PI * 2);
+				roundedRectPath(context, c - FRAME_HALF, c - FRAME_HALF, FRAME_HALF * 2, FRAME_HALF * 2, 34);
 				context.stroke();
 
-				// Quatre repères encastrés de la bague (N, E, S, O)
+				// Quatre repères encastrés au milieu des côtés (N, E, S, O)
 				for(var mark = 0; mark < 4; mark++)
 				{
 					context.save();
 					context.translate(c, c);
 					context.rotate(mark * Math.PI / 2);
-					roundedRectPath(context, -4.5, -127, 9, 17, 3);
+					roundedRectPath(context, -4.5, -FRAME_HALF + 2, 9, 16, 3);
 					context.fillStyle = "#2b2e31";
 					context.fill();
-					roundedRectPath(context, -2.4, -125, 4.8, 13, 2);
+					roundedRectPath(context, -2.4, -FRAME_HALF + 4, 4.8, 12, 2);
 					var tab = context.createLinearGradient(-2.4, 0, 2.4, 0);
 					tab.addColorStop(0, "#9ca2a8");
 					tab.addColorStop(0.5, "#f4f6f7");
@@ -338,35 +343,33 @@
 					context.restore();
 				}
 
-				// Puits et soufflet en caoutchouc noir
-				var well = context.createRadialGradient(c, c, 10, c, c, WELL_RADIUS);
+				// Puits carré et soufflet en caoutchouc noir
+				var well = context.createRadialGradient(c, c, 10, c, c, WELL_HALF * 1.35);
 				well.addColorStop(0, "#2a2c2f");
-				well.addColorStop(0.55, "#121315");
-				well.addColorStop(0.92, "#050506");
+				well.addColorStop(0.5, "#121315");
+				well.addColorStop(0.85, "#050506");
 				well.addColorStop(1, "#000");
 				context.fillStyle = well;
-				context.beginPath();
-				context.arc(c, c, WELL_RADIUS, 0, Math.PI * 2);
+				roundedRectPath(context, c - WELL_HALF, c - WELL_HALF, WELL_HALF * 2, WELL_HALF * 2, 18);
 				context.fill();
 				context.strokeStyle = "rgba(255,255,255,0.12)";
 				context.lineWidth = 1;
 				context.stroke();
 
-				for(var fold = 34; fold < WELL_RADIUS - 6; fold += 11)
+				for(var fold = 30; fold < WELL_HALF - 6; fold += 11)
 				{
+					var corner = 6 + fold * 0.12;
 					context.strokeStyle = "rgba(255,255,255,0.055)";
 					context.lineWidth = 2;
-					context.beginPath();
-					context.arc(c, c, fold, Math.PI * 1.05, Math.PI * 1.75);
+					roundedRectPath(context, c - fold - 1, c - fold - 1, fold * 2, fold * 2, corner);
 					context.stroke();
 					context.strokeStyle = "rgba(0,0,0,0.5)";
 					context.lineWidth = 1;
-					context.beginPath();
-					context.arc(c, c, fold + 2, 0, Math.PI * 2);
+					roundedRectPath(context, c - fold - 2, c - fold - 2, (fold + 2) * 2, (fold + 2) * 2, corner);
 					context.stroke();
 				}
 
-				// Croix de course du cardan
+				// Croix et cadre de course du cardan
 				context.strokeStyle = "rgba(255,255,255,0.07)";
 				context.lineWidth = 1;
 				context.setLineDash([3, 4]);
@@ -375,6 +378,7 @@
 				context.lineTo(c + JOYSTICK_TRAVEL, c);
 				context.moveTo(c, c - JOYSTICK_TRAVEL);
 				context.lineTo(c, c + JOYSTICK_TRAVEL);
+				context.rect(c - JOYSTICK_TRAVEL, c - JOYSTICK_TRAVEL, JOYSTICK_TRAVEL * 2, JOYSTICK_TRAVEL * 2);
 				context.stroke();
 				context.setLineDash([]);
 			}
@@ -550,7 +554,7 @@
 				rudderTrim.set(direction);
 				if(joystickPointer === null)
 				{
-					joystickView = squareToCircle(direction / 90, power / 100);
+					joystickView = { x: direction / 90, y: power / 100 };
 					renderJoystick(joystickView.x, joystickView.y);
 				}
 			}
@@ -627,39 +631,16 @@
 				sendCommand(18, level);
 			}
 
-			// Le puits du manche est rond mais les commandes forment un carré
-			// (puissance x direction) : on étire le disque sur le carré, le long de
-			// chaque rayon. Sur les axes rien ne change ; au bord du puits en
-			// diagonale, on obtient 100 % de puissance et 90° de barre ensemble.
-			function circleToSquare(x, y)
-			{
-				var radius = Math.sqrt(x * x + y * y);
-				var edge = Math.max(Math.abs(x), Math.abs(y));
-				return edge === 0 ? { x: 0, y: 0 } : { x: x * radius / edge, y: y * radius / edge };
-			}
-
-			function squareToCircle(x, y)
-			{
-				var radius = Math.sqrt(x * x + y * y);
-				var edge = Math.max(Math.abs(x), Math.abs(y));
-				return radius === 0 ? { x: 0, y: 0 } : { x: x * edge / radius, y: y * edge / radius };
-			}
-
 			function setJoystickFromPointer(event)
 			{
 				var bounds = canvas.getBoundingClientRect();
 				var scale = JOYSTICK_SIZE / bounds.width;
 				var x = ((event.clientX - bounds.left) * scale - JOYSTICK_CENTER) / JOYSTICK_TRAVEL;
 				var y = (JOYSTICK_CENTER - (event.clientY - bounds.top) * scale) / JOYSTICK_TRAVEL;
-				var distance = Math.sqrt(x * x + y * y);
-				if(distance > 1)
-				{
-					x /= distance;
-					y /= distance;
-				}
-				var command = circleToSquare(x, y);
-				direction = Math.round(command.x * 90);
-				power = Math.round(command.y * 100);
+				x = Math.max(-1, Math.min(1, x));
+				y = Math.max(-1, Math.min(1, y));
+				direction = Math.round(x * 90);
+				power = Math.round(y * 100);
 				joystickView = { x: x, y: y };
 				renderJoystick(x, y);
 				scheduleControls();

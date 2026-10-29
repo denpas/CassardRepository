@@ -50,13 +50,13 @@ L'écran reproduit la face d'une radiocommande de modélisme (type Spektrum DX6i
 et est mis en page pour l'iPhone 16e (390 × 844 points, zones de sécurité
 comprises); sur un écran plus large, la radiocommande reste centrée.
 
-- **Manche vu de dessus** : dessiné sur canvas (platine vissée, bague aluminium
-  brossé à quatre repères, graduations tous les 5°, soufflet caoutchouc, pommeau
-  moleté). Il se pilote au toucher, à la souris ou avec les flèches du clavier.
+- **Manche vu de dessus** : dessiné sur canvas (platine vissée, cadre carré en
+  aluminium brossé à quatre repères, graduations tous les 10 % de course,
+  soufflet caoutchouc, pommeau moleté). Il se pilote au toucher, à la souris ou avec les flèches du clavier.
   L'axe avant / arrière règle la puissance de -100 à +100 %, l'axe bâbord /
-  tribord commande la direction de -90 à +90°. Le puits est rond mais la course
-  est étirée sur un carré : au bord du puits en diagonale, on obtient à la fois
-  100 % de puissance et 90° de barre. Au relâchement, il revient au
+  tribord commande la direction de -90 à +90°. La grille est carrée, comme sur une
+  radiocommande : dans un coin, on obtient à la fois 100 % de puissance et 90°
+  de barre. Au relâchement, il revient au
   neutre et envoie l'arrêt moteur (commande 14) et le recentrage du gouvernail
   (commande 17).
 - **Trim moteur vertical, à droite du manche** : levier strié dans une rainure
