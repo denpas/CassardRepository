@@ -16,12 +16,11 @@ commune `app.css`, ainsi que deux scripts partagés :
 
 Les écrans de commande **Propulsion & direction** et **Tourelle 100 mm**
 reproduisent la face d'une radiocommande de modélisme : coque gris métal vissée,
-poignées caoutchouc, sérigraphies, accents orange, trims et interrupteur
-**POWER**. Ils sont conçus pour l'iPhone 16e en portrait (390 × 844 points,
+poignées caoutchouc, sérigraphies, accents orange et trims. Ils sont conçus pour l'iPhone 16e en portrait (390 × 844 points,
 zones de sécurité comprises) et restent centrés sur un écran plus large. Leur
 en-tête sombre affiche le lien de retour au tableau de bord (logo CASSARD), le
-nom du module et le témoin de connexion ; l'interrupteur POWER sert de voyant
-de liaison.
+nom du module et le témoin de connexion ; le voyant orange du pupitre s'allume
+une fois connecté.
 
 Les autres écrans (connexion, tableau de bord, instruments, sons & lumières,
 diagnostic) gardent la présentation en cartes claires sur barre bleu marine.
@@ -44,7 +43,7 @@ liaison** avec le module central et la garde pendant toute la session :
   de vol de session en boucle entre deux téléphones) : un bandeau propose
   « Reprendre la main » ;
 - un mot de passe refusé par le bateau ramène à la page de connexion ;
-- « Verrouiller » (tableau de bord) coupe la liaison et efface la clé.
+- « Déconnecter » (tableau de bord) coupe la liaison et efface la clé.
 
 Un écran ouvert seul (par son adresse) passe par la coquille.
 
@@ -62,7 +61,7 @@ bateau ». Voir [securite.md](./securite.md).
 
 Présente sous forme de cartes les accès à Propulsion & direction, Tourelle
 100 mm, Instruments, Sons & lumières et à la Console de diagnostic. Le lien
-« Verrouiller » efface la clé de pilotage de l'onglet. Les pages de commande
+« Déconnecter » coupe la liaison et efface la clé de pilotage de l'onglet. Les pages de commande
 renvoient vers la connexion si aucune clé n'est présente. Les réglages Wi-Fi se
 font dans le firmware (`CassardWifi.h`), plus depuis une page.
 
@@ -88,9 +87,9 @@ comprises); sur un écran plus large, la radiocommande reste centrée.
 - **Trim direction horizontal, sous le manche** : boutons BÂB / TRI (pas de 5°);
   les valeurs négatives envoient le braquage à gauche (16), les valeurs positives
   celui à droite (15) et le centre le recentrage (17).
-- **Interrupteur POWER** : voyant de liaison (il bascule, et le voyant et les
-  barres orange s'allument, une fois connecté) ; à chaque connexion, le pupitre
-  repart du neutre et envoie la réactivité affichée.
+- **Liaison** : le voyant et les barres orange s'allument une fois connecté ; à
+  chaque connexion, le pupitre repart du neutre et envoie la réactivité
+  affichée.
 - **Écran LCD** : affiche puissance, direction et réactivité.
 - **Trim de réactivité** vertical, à droite de l'écran : réactivité moteur de 0
   à 5 (un cran par niveau, boutons RÉA+ / RÉA−), commande 18 du module 2. Elle
@@ -121,8 +120,8 @@ vertical (390 × 844), sans défilement : les deux vues se partagent la hauteur.
   Cadran gradué de 0 à 80° avec index orange.
 - **Trim d'élévation** vertical à droite de la vue de profil : boutons HAUT /
   BAS (pas de 5°).
-- **Interrupteur POWER** : voyant de liaison ; la position courante est
-  envoyée à chaque connexion.
+- **Liaison** : le voyant orange s'allume une fois connecté ; la position
+  courante est envoyée à chaque connexion.
 
 À chaque changement, la page envoie les deux coordonnées dans une trame
 unique de commande 4 au module 1 (regroupées toutes les 80 ms). L'azimut

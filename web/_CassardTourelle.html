@@ -31,8 +31,6 @@
 					<span class="tx-brand-badge">CASSARD</span>
 					<span class="tx-print turret-model">T 100</span>
 					<span class="tx-led" id="tx-led" aria-hidden="true"></span>
-					<span class="tx-power-label">POWER</span>
-					<button class="tx-power-switch" id="bt_connect" type="button" role="switch" aria-checked="false" aria-label="Liaison avec le navire (voyant)" disabled></button>
 				</div>
 
 				<section class="turret-view turret-view-top" aria-label="Vue de dessus, azimut">
@@ -170,7 +168,6 @@
 			{
 				document.getElementById("ws_state").textContent = label;
 				document.getElementById("ws_state").classList.toggle("connected", connected);
-				document.getElementById("bt_connect").setAttribute("aria-checked", connected ? "true" : "false");
 				document.getElementById("tx-led").classList.toggle("on", connected);
 			}
 

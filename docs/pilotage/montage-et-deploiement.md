@@ -82,7 +82,7 @@ jamais le pilotage.
 | colonne 5 | Trames recues | un pixel qui descend d'une ligne a chaque trame valide recue de l'application (sa vitesse suit le debit), visible 1 s apres la derniere |
 | colonne 7 | Trames I2C | un pixel qui monte d'une ligne a chaque trame emise vers les cartes Nano (y compris les arrets de securite), visible 1 s apres la derniere |
 | colonne 11, lignes 2-5 | Erreur | trait vertical allume 2 s apres une trame refusee (signature, rejeu, trame non signee ou trop longue, commande invalide) |
-| lignes 5-7, colonnes 0-2 | Wi-Fi | antenne (`.X.` / `XXX` / `XXX`) : au moins un appareil sur le Wi-Fi |
+| lignes 5-7, colonnes 0-2 | Wi-Fi | antenne (`.X.` / `.X.` / `XXX`) : au moins un appareil sur le Wi-Fi |
 | ligne 0, colonne 11 | Vie | pixel qui clignote a 1 Hz : un pixel fige signale un firmware bloque |
 
 Le module Wi-Fi du R4 ne sait pas lister les appareils associes a son point

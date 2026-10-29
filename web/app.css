@@ -1045,69 +1045,11 @@ body.helm-page {
 	text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
 }
 
-/* Interrupteur POWER = liaison */
-.tx-power {
-	align-items: center;
-	display: flex;
-	gap: 10px;
-	justify-content: center;
-	padding: 14px 0 10px;
-}
-
-.tx-power-label {
-	color: var(--tx-orange);
-	font-size: 9px;
-	font-weight: 850;
-	letter-spacing: 0.16em;
-}
-
-.tx-power-switch {
-	appearance: none;
-	background: linear-gradient(180deg, #121314, #2a2d30);
-	border: 0;
-	border-radius: 14px;
-	box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.8), 0 1px 0 rgba(255, 255, 255, 0.35);
-	cursor: pointer;
-	height: 26px;
-	padding: 0;
-	position: relative;
-	width: 58px;
-}
-
-.tx-power-switch:before {
-	background:
-		repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.25) 0 1px, transparent 1px 4px),
-		linear-gradient(180deg, #f3f5f6, #a5abb1);
-	border-radius: 11px;
-	box-shadow: 0 2px 3px rgba(0, 0, 0, 0.6);
-	content: "";
-	height: 20px;
-	left: 3px;
-	position: absolute;
-	top: 3px;
-	transition: transform 160ms ease;
-	width: 28px;
-}
-
-.tx-power-switch[aria-checked="true"]:before {
-	transform: translateX(24px);
-}
-
-/* Voyant de liaison : la connexion est ouverte par le mot de passe, pas par l'interrupteur */
-.tx-power-switch:disabled {
-	cursor: default;
-	opacity: 1;
-}
-
-.tx-power-switch:focus-visible {
-	outline: 2px solid var(--tx-orange);
-	outline-offset: 3px;
-}
-
 /* Écran LCD + trim de réactivité */
 .tx-lcd-row {
 	align-items: center;
 	display: grid;
+	margin-top: 14px;
 	gap: 10px;
 	grid-template-columns: 26px minmax(0, 1fr) 52px;
 }
@@ -1241,11 +1183,6 @@ body.helm-page {
 	.tx-sticks { grid-template-columns: minmax(0, 1fr) 46px; grid-template-rows: auto 46px; }
 }
 
-.tx-power .tx-print {
-	color: #2b2f33;
-	text-shadow: 0 1px 0 rgba(255, 255, 255, 0.3);
-}
-
 /* Tourelle 100 mm — même coque et mêmes trims que le pupitre propulsion */
 
 body.turret-page {
@@ -1294,10 +1231,6 @@ body.turret-page {
 	flex: 0 0 auto;
 	font-size: 9px;
 	padding: 1px 6px;
-}
-
-.turret-strip .tx-power-switch {
-	flex: 0 0 auto;
 }
 
 .turret-view-heading .tx-print {

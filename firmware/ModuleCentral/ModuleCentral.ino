@@ -99,7 +99,7 @@ uint8_t entropyPool[32];
 //  colonne 11, lignes 2-5 : trame refusée dans les 2 dernières secondes ;
 //  ligne 0, colonne 11    : témoin de vie, clignote à 1 Hz.
 const char* const IconApplication[3] = { ".XX", "X..", ".XX" };
-const char* const IconWifi[3] = { ".X.", "XXX", "XXX" };
+const char* const IconWifi[3] = { ".X.", ".X.", "XXX" };
 const byte MaxWifiDevices = 4;
 const uint32_t WifiDeviceTimeoutMs = 10000;
 uint8_t matrixPixels[8][12];

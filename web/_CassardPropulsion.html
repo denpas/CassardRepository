@@ -87,12 +87,6 @@
 					</div>
 				</div>
 
-				<div class="tx-power">
-					<span class="tx-power-label">POWER</span>
-					<button class="tx-power-switch" id="bt_connect" type="button" role="switch" aria-checked="false" aria-label="Liaison avec le navire (voyant)" disabled></button>
-					<span class="tx-print">Liaison</span>
-				</div>
-
 				<div class="tx-lcd-row">
 					<div class="tx-bars" id="tx-bars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
 					<div class="tx-lcd">
@@ -169,7 +163,6 @@
 			{
 				document.getElementById("ws_state").textContent = label;
 				document.getElementById("ws_state").classList.toggle("connected", connected);
-				document.getElementById("bt_connect").setAttribute("aria-checked", connected ? "true" : "false");
 				document.getElementById("tx-led").classList.toggle("on", connected);
 				document.getElementById("tx-bars").classList.toggle("on", connected);
 				document.getElementById("lcd-link").textContent = connected ? "LINK" : "----";

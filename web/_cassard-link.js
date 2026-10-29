@@ -411,7 +411,7 @@ var CassardLink = (function()
 		return { readyState: 0, send: function() {}, close: function() {} };
 	}
 
-	// Verrouiller : coupe la connexion, oublie la clé et revient à la page de connexion.
+	// Déconnecter : coupe la connexion, oublie la clé et revient à la page de connexion.
 	function lock()
 	{
 		forget();

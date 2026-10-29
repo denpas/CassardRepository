@@ -14,7 +14,7 @@ se fait donc **sur l'Arduino, trame par trame**.
 1. **Clé de pilotage** : dérivée du mot de passe par PBKDF2-HMAC-SHA256 (sel
    `CASSARD-D614-pilotage`, 10 000 itérations, 32 octets). Le navigateur la
    calcule à la connexion et la garde dans `sessionStorage` (effacée à la
-   fermeture de l'onglet ou par « Verrouiller »). L'Arduino ne contient que la
+   fermeture de l'onglet ou par « Déconnecter »). L'Arduino ne contient que la
    clé dérivée, jamais le mot de passe. **Le mot de passe ne circule pas sur le
    réseau.**
 2. **Poignée de main** : le navigateur envoie `AUTH`; l'Arduino tire un nonce
