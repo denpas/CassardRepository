@@ -115,10 +115,13 @@
 							</div>
 						</div>
 					</div>
-					<div class="tx-roller" id="ProportionRoller" tabindex="0" role="slider" aria-orientation="vertical" aria-label="Réactivité moteur" aria-valuemin="0" aria-valuemax="5" aria-valuenow="0">
-						<span class="tx-roller-drum"></span>
-						<button type="button" data-step="1" tabindex="-1" aria-label="Réactivité plus"></button>
-						<button type="button" data-step="-1" tabindex="-1" aria-label="Réactivité moins"></button>
+					<div class="trim trim-vertical tx-reactivity" id="reactivity-trim">
+						<button class="trim-step trim-step-up" type="button" data-step="1" aria-label="Augmenter la réactivité">RÉA+</button>
+						<div class="trim-track" tabindex="0" role="slider" aria-orientation="vertical" aria-label="Réactivité moteur, 0 à 5">
+							<div class="trim-slot"></div>
+							<div class="trim-rail"><i class="trim-fill"></i><span class="trim-lever"></span></div>
+						</div>
+						<button class="trim-step trim-step-down" type="button" data-step="-1" aria-label="Diminuer la réactivité">RÉA−</button>
 					</div>
 				</div>
 
@@ -537,6 +540,10 @@
 				power = value;
 				scheduleControls();
 			});
+			var reactivityTrim = createTrim(document.getElementById("reactivity-trim"), 0, 5, 5, function(value)
+			{
+				setProportion(value);
+			});
 			var rudderTrim = createTrim(document.getElementById("rudder-trim"), -90, 90, 45, function(value)
 			{
 				direction = value;
@@ -628,14 +635,8 @@
 			function setProportion(level)
 			{
 				level = Math.max(0, Math.min(5, level));
-				var roller = document.getElementById("ProportionRoller");
-				if(level !== proportion)
-				{
-					var offset = parseFloat(roller.style.getPropertyValue("--roller-offset")) || 0;
-					roller.style.setProperty("--roller-offset", (offset + (level - proportion) * 6) + "px");
-				}
 				proportion = level;
-				roller.setAttribute("aria-valuenow", level);
+				reactivityTrim.set(level);
 				document.getElementById("proportion-value").textContent = "N" + level;
 				var bar = document.getElementById("lcd-proportion-bar");
 				bar.style.left = "0";
@@ -738,29 +739,6 @@
 					event.preventDefault();
 				}
 			});
-
-			var roller = document.getElementById("ProportionRoller");
-			var rollerButtons = roller.querySelectorAll("button");
-			for(var i = 0; i < rollerButtons.length; i++)
-			{
-				rollerButtons[i].addEventListener("click", function()
-				{
-					setProportion(proportion + Number(this.getAttribute("data-step")));
-				});
-			}
-			roller.addEventListener("keydown", function(event)
-			{
-				if(event.key === "ArrowUp" || event.key === "ArrowDown")
-				{
-					setProportion(proportion + (event.key === "ArrowUp" ? 1 : -1));
-					event.preventDefault();
-				}
-			});
-			roller.addEventListener("wheel", function(event)
-			{
-				setProportion(proportion + (event.deltaY < 0 ? 1 : -1));
-				event.preventDefault();
-			}, { passive: false });
 
 			document.getElementById("bt_connect").addEventListener("click", connect_onclick);
 			window.addEventListener("resize", function()

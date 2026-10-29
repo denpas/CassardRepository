@@ -69,8 +69,9 @@ comprises); sur un écran plus large, la radiocommande reste centrée.
 - **Interrupteur POWER** : ouvre ou ferme la liaison WebSocket; le voyant et les
   barres orange s'allument une fois connecté.
 - **Écran LCD** : affiche puissance, direction et réactivité.
-- **Molette** (à droite de l'écran) : réactivité moteur de 0 à 5, commande 18 du
-  module 2.
+- **Trim de réactivité** vertical, à droite de l'écran : réactivité moteur de 0
+  à 5 (un cran par niveau, boutons RÉA+ / RÉA−), commande 18 du module 2. Elle
+  règle le mélange différentiel des moteurs (voir [protocole.md](./protocole.md)).
 
 Les commandes sont transmises au WebSocket du module central (port 81). Les
 modifications combinées sont regroupées avant l'envoi pour limiter la cadence

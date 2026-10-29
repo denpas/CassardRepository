@@ -111,9 +111,9 @@ main { display: grid; grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr);
 				<span class="leds"><span class="led ok"><i id="p-ok" class="on"></i>OK</span><span class="led err"><i id="p-err"></i>erreur</span></span></h2>
 			<div class="motors">
 				<div class="motor">
-					<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#0b0d10" stroke="#2a2f37"/>
-						<g class="prop" id="prop-left"><path d="M50 50 C44 30 46 10 50 8 C54 10 56 30 50 50Z M50 50 C66 58 84 70 85 74 C81 77 62 64 50 50Z M50 50 C34 58 16 70 15 74 C19 77 38 64 50 50Z" fill="#c9a35a"/></g>
-						<circle cx="50" cy="50" r="6" fill="#555"/></svg>
+					<svg viewBox="0 0 100 100"><defs><linearGradient id="bronze" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#eadbbf"/><stop offset="0.55" stop-color="#cdb38b"/><stop offset="1" stop-color="#a88e68"/></linearGradient><radialGradient id="moyeu" cx="0.4" cy="0.35" r="0.7"><stop offset="0" stop-color="#f3e6cc"/><stop offset="1" stop-color="#ad936c"/></radialGradient><path id="pale" d="M46.5 44 C40 36 33.5 23 37.5 11 C40.5 3.5 53.5 2.5 58.5 8.5 C63 15 60.5 29 54.5 43.5 Z" fill="url(#bronze)" stroke="#8a7351" stroke-width="0.6" stroke-linejoin="round"/></defs><circle cx="50" cy="50" r="47" fill="#0b0d10" stroke="#2a2f37"/>
+						<!-- Hélice 5 pales ; la droite est son reflet (hélices contrarotatives) -->
+						<g class="prop" id="prop-left"><use href="#pale" transform="rotate(0 50 50)"/><use href="#pale" transform="rotate(72 50 50)"/><use href="#pale" transform="rotate(144 50 50)"/><use href="#pale" transform="rotate(216 50 50)"/><use href="#pale" transform="rotate(288 50 50)"/><circle cx="50" cy="50" r="8.5" fill="url(#moyeu)" stroke="#7d6849" stroke-width="0.6"/><circle cx="50" cy="50" r="3" fill="#1b1e22" stroke="#5c4c35" stroke-width="0.5"/></g></svg>
 					<strong>Moteur gauche</strong><span id="m-left">arrêt</span>
 				</div>
 				<div class="motor">
@@ -124,9 +124,8 @@ main { display: grid; grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr);
 					<strong>Servo de barre</strong><span id="m-rudder">90° · axe</span>
 				</div>
 				<div class="motor">
-					<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#0b0d10" stroke="#2a2f37"/>
-						<g class="prop" id="prop-right"><path d="M50 50 C44 30 46 10 50 8 C54 10 56 30 50 50Z M50 50 C66 58 84 70 85 74 C81 77 62 64 50 50Z M50 50 C34 58 16 70 15 74 C19 77 38 64 50 50Z" fill="#c9a35a"/></g>
-						<circle cx="50" cy="50" r="6" fill="#555"/></svg>
+					<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="47" fill="#0b0d10" stroke="#2a2f37"/>
+						<g class="prop" id="prop-right"><g transform="translate(100 0) scale(-1 1)"><use href="#pale" transform="rotate(0 50 50)"/><use href="#pale" transform="rotate(72 50 50)"/><use href="#pale" transform="rotate(144 50 50)"/><use href="#pale" transform="rotate(216 50 50)"/><use href="#pale" transform="rotate(288 50 50)"/></g><circle cx="50" cy="50" r="8.5" fill="url(#moyeu)" stroke="#7d6849" stroke-width="0.6"/><circle cx="50" cy="50" r="3" fill="#1b1e22" stroke="#5c4c35" stroke-width="0.5"/></g></svg>
 					<strong>Moteur droit</strong><span id="m-right">arrêt</span>
 				</div>
 			</div>

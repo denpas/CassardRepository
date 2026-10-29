@@ -1098,12 +1098,12 @@ body.helm-page {
 	outline-offset: 3px;
 }
 
-/* Écran LCD + molette */
+/* Écran LCD + trim de réactivité */
 .tx-lcd-row {
-	align-items: stretch;
+	align-items: center;
 	display: grid;
 	gap: 10px;
-	grid-template-columns: 26px minmax(0, 1fr) 34px;
+	grid-template-columns: 26px minmax(0, 1fr) 52px;
 }
 
 .tx-bars {
@@ -1199,46 +1199,15 @@ body.helm-page {
 	top: 0;
 }
 
-.tx-roller {
-	align-items: stretch;
-	background: linear-gradient(90deg, #2a2d30, #121314);
-	border-radius: 8px;
-	box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.8), 0 1px 0 rgba(255, 255, 255, 0.35);
-	display: flex;
-	flex-direction: column;
-	outline: none;
-	padding: 4px;
-	position: relative;
+/* Trim de réactivité (0 à 5) à droite de l'écran LCD */
+.tx-reactivity {
+	grid-area: auto;
+	height: 150px;
 }
 
-.tx-roller:focus-visible {
-	box-shadow: 0 0 0 2px var(--tx-orange);
+.tx-reactivity .trim-step {
+	height: 26px;
 }
-
-.tx-roller-drum {
-	background:
-		repeating-linear-gradient(180deg, rgba(0, 0, 0, 0.5) 0 1px, rgba(255, 255, 255, 0.35) 1px 2px, transparent 2px 4px),
-		linear-gradient(90deg, #6b7076, #e3e6e8 45%, #8e9399 70%, #4a4e52);
-	background-position: 0 var(--roller-offset, 0px), 0 0;
-	border-radius: 5px;
-	flex: 1;
-	transition: background-position 140ms ease;
-}
-
-.tx-roller button {
-	appearance: none;
-	background: transparent;
-	border: 0;
-	cursor: pointer;
-	height: 50%;
-	left: 0;
-	padding: 0;
-	position: absolute;
-	width: 100%;
-}
-
-.tx-roller button:first-of-type { top: 0; }
-.tx-roller button:last-of-type { bottom: 0; }
 
 .tx-footer {
 	display: flex;
