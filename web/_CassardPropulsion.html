@@ -550,8 +550,7 @@
 				rudderTrim.set(direction);
 				if(joystickPointer === null)
 				{
-					joystickView.x = direction / 90;
-					joystickView.y = power / 100;
+					joystickView = squareToCircle(direction / 90, power / 100);
 					renderJoystick(joystickView.x, joystickView.y);
 				}
 			}
@@ -628,6 +627,24 @@
 				sendCommand(18, level);
 			}
 
+			// Le puits du manche est rond mais les commandes forment un carré
+			// (puissance x direction) : on étire le disque sur le carré, le long de
+			// chaque rayon. Sur les axes rien ne change ; au bord du puits en
+			// diagonale, on obtient 100 % de puissance et 90° de barre ensemble.
+			function circleToSquare(x, y)
+			{
+				var radius = Math.sqrt(x * x + y * y);
+				var edge = Math.max(Math.abs(x), Math.abs(y));
+				return edge === 0 ? { x: 0, y: 0 } : { x: x * radius / edge, y: y * radius / edge };
+			}
+
+			function squareToCircle(x, y)
+			{
+				var radius = Math.sqrt(x * x + y * y);
+				var edge = Math.max(Math.abs(x), Math.abs(y));
+				return radius === 0 ? { x: 0, y: 0 } : { x: x * edge / radius, y: y * edge / radius };
+			}
+
 			function setJoystickFromPointer(event)
 			{
 				var bounds = canvas.getBoundingClientRect();
@@ -640,8 +657,9 @@
 					x /= distance;
 					y /= distance;
 				}
-				direction = Math.round(x * 90);
-				power = Math.round(y * 100);
+				var command = circleToSquare(x, y);
+				direction = Math.round(command.x * 90);
+				power = Math.round(command.y * 100);
 				joystickView = { x: x, y: y };
 				renderJoystick(x, y);
 				scheduleControls();
