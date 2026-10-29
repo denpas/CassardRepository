@@ -35,24 +35,28 @@ textarea {
 	font: inherit;
 }
 
+/* Bandeau commun à tous les écrans : bleu marine, une seule ligne */
 .app-header {
 	align-items: center;
 	background: var(--navy);
-	box-shadow: 0 3px 14px rgba(16, 35, 63, 0.16);
+	box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06);
 	color: #fff;
 	display: flex;
-	gap: 24px;
-	justify-content: space-between;
-	min-height: 76px;
-	padding: 14px max(24px, calc((100% - 1180px) / 2));
+	gap: 10px;
+	line-height: 1.2;
+	padding: calc(env(safe-area-inset-top) + 10px) 16px 10px;
+	position: sticky;
+	top: 0;
+	z-index: 2;
 }
 
 .brand {
 	align-items: center;
 	display: inline-flex;
-	font-size: 14px;
+	flex: 0 0 auto;
+	font-size: 12px;
 	font-weight: 750;
-	gap: 11px;
+	gap: 8px;
 	letter-spacing: 0.12em;
 	white-space: nowrap;
 }
@@ -60,37 +64,29 @@ textarea {
 .brand-mark {
 	align-items: center;
 	background: #e6a744;
-	border-radius: 9px;
+	border-radius: 7px;
 	color: var(--navy);
 	display: inline-flex;
-	font-size: 13px;
-	height: 36px;
+	font-size: 12px;
+	height: 28px;
 	justify-content: center;
 	letter-spacing: 0;
-	width: 36px;
+	width: 28px;
 }
 
 .header-title {
-	flex: 1;
-	font-size: 18px;
-	font-weight: 650;
-}
-
-.header-actions {
-	align-items: center;
-	display: flex;
-	gap: 14px;
-}
-
-.header-menu {
 	color: #d7e1ed;
-	font-size: 14px;
+	flex: 1;
+	font-size: 13px;
+	font-weight: 650;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
-.header-menu:hover {
-	color: #fff;
-}
-
+/* Lien et témoin à droite : même gabarit de pastille */
+.header-menu,
 .connection-status {
 	align-items: center;
 	background: rgba(255, 255, 255, 0.1);
@@ -98,10 +94,15 @@ textarea {
 	border-radius: 999px;
 	color: #dce8f4;
 	display: inline-flex;
-	font-size: 12px;
+	flex: 0 0 auto;
+	font-size: 11px;
 	gap: 8px;
 	padding: 7px 11px;
 	white-space: nowrap;
+}
+
+.header-menu:hover {
+	color: #fff;
 }
 
 .connection-status:before {
@@ -356,6 +357,15 @@ a.module-card:hover {
 
 .auth-card .brand {
 	color: var(--navy);
+	font-size: 14px;
+	gap: 11px;
+}
+
+.auth-card .brand-mark {
+	border-radius: 9px;
+	font-size: 13px;
+	height: 36px;
+	width: 36px;
 }
 
 .auth-card h1 {
@@ -500,23 +510,6 @@ a.module-card:hover {
 }
 
 @media (max-width: 680px) {
-	.app-header {
-		align-items: flex-start;
-		flex-wrap: wrap;
-		gap: 12px;
-		padding: 14px 18px;
-	}
-
-	.header-title {
-		order: 3;
-		width: 100%;
-	}
-
-	.header-actions {
-		gap: 8px;
-		margin-left: auto;
-	}
-
 	.page-shell {
 		padding: 30px 18px 44px;
 	}
@@ -567,46 +560,6 @@ body.helm-page {
 	-webkit-tap-highlight-color: transparent;
 	-webkit-user-select: none;
 	user-select: none;
-}
-
-.helm-page .app-header {
-	flex-wrap: nowrap;
-	background: rgba(10, 12, 14, 0.82);
-	box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06);
-	gap: 10px;
-	min-height: 0;
-	padding: calc(env(safe-area-inset-top) + 8px) 16px 8px;
-	position: sticky;
-	top: 0;
-	z-index: 2;
-}
-
-.helm-page .brand {
-	font-size: 12px;
-	gap: 8px;
-}
-
-.helm-page .brand-mark {
-	height: 26px;
-	width: 26px;
-}
-
-.helm-page .header-title {
-	color: #c9d1d8;
-	flex: 1;
-	min-width: 0;
-	order: 0;
-	width: auto;
-	font-size: 12px;
-	font-weight: 650;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
-
-.helm-page .connection-status {
-	font-size: 11px;
-	white-space: nowrap;
 }
 
 .tx {

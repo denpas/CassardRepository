@@ -17,13 +17,16 @@ commune `app.css`, ainsi que deux scripts partagés :
 Les écrans de commande **Propulsion & direction** et **Tourelle 100 mm**
 reproduisent la face d'une radiocommande de modélisme : coque gris métal vissée,
 poignées caoutchouc, sérigraphies, accents orange et trims. Ils sont conçus pour l'iPhone 16e en portrait (390 × 844 points,
-zones de sécurité comprises) et restent centrés sur un écran plus large. Leur
-en-tête sombre affiche le lien de retour au tableau de bord (logo CASSARD), le
-nom du module et le témoin de connexion ; le voyant orange du pupitre s'allume
-une fois connecté.
+zones de sécurité comprises) et restent centrés sur un écran plus large. Le
+voyant orange du pupitre s'allume une fois connecté.
 
 Les autres écrans (connexion, tableau de bord, instruments, sons & lumières,
-diagnostic) gardent la présentation en cartes claires sur barre bleu marine.
+diagnostic) gardent la présentation en cartes claires.
+
+Tous les écrans partagent le même bandeau bleu marine, sur une ligne et aux
+mêmes positions : logo CASSARD (retour au tableau de bord), titre de l'écran,
+puis à droite le témoin de connexion (ou « Déconnecter » sur le tableau de
+bord).
 
 ## Connexion au bateau
 
