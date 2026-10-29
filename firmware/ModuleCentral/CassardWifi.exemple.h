@@ -13,4 +13,8 @@
 // Mot de passe WPA2 : au moins 8 caractères, différent du mot de passe de pilotage.
 #define CASSARD_WIFI_MOT_DE_PASSE "a-remplacer"
 
+// Canal du point d'accès (2,4 GHz : 1 à 13). Choisir un canal peu encombré :
+// sur le canal 1, voisin d'autres réseaux, le point d'accès n'était plus émis.
+#define CASSARD_WIFI_CANAL 6
+
 #endif

@@ -29,6 +29,10 @@
 #endif
 #include "PagesWeb.h"
 
+#ifndef CASSARD_WIFI_CANAL
+#define CASSARD_WIFI_CANAL 6
+#endif
+
 #if CASSARD_WIFI_POINT_ACCES
 static_assert(sizeof(CASSARD_WIFI_MOT_DE_PASSE) - 1 >= 8, "WPA2 : mot de passe Wi-Fi d'au moins 8 caracteres");
 #endif
@@ -447,15 +451,9 @@ void startWifi()
       delay(1000);
   }
 
-  // Le module Wi-Fi (ESP32) n'est pas redémarré avec le microcontrôleur (par
-  // exemple après un téléversement) : on le réinitialise pour repartir d'un état
-  // propre, sans quoi le point d'accès peut se dire actif sans émettre.
-  WiFi.end();
-  delay(500);
-
 #if CASSARD_WIFI_POINT_ACCES
   WiFi.config(IPAddress(192, 168, 4, 1));
-  while (WiFi.beginAP(CASSARD_WIFI_SSID, CASSARD_WIFI_MOT_DE_PASSE) != WL_AP_LISTENING)
+  while (WiFi.beginAP(CASSARD_WIFI_SSID, CASSARD_WIFI_MOT_DE_PASSE, CASSARD_WIFI_CANAL) != WL_AP_LISTENING)
   {
     Serial.println(F("Point d'acces Wi-Fi : nouvel essai"));
     delay(1000);

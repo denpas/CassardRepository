@@ -108,9 +108,9 @@ interroge que 10 fois par seconde, sauf pendant le chargement d'une page.
 - Les firmwares ne renvoient pas encore de statut de commande a l'interface.
 - Le moniteur serie du central (115 200 bauds) affiche le mode Wi-Fi, l'adresse
   de l'interface et les arrets de securite sur perte de liaison.
-- Apres un televersement, le reseau « cassard » reapparait au bout d'environ
-  15 s. Le module Wi-Fi (ESP32) n'est pas redemarre par le televersement : le
-  firmware le reinitialise (`WiFi.end()`) a chaque demarrage, sans quoi le point
-  d'acces pouvait se dire actif sans emettre.
+- Reseau « cassard » absent alors que la carte se dit en ecoute : changer de
+  canal (`CASSARD_WIFI_CANAL` dans `CassardWifi.h`, 6 par defaut). Sur le
+  canal 1, voisin d'autres reseaux, le point d'acces n'etait plus emis.
+  Apres un televersement, le reseau reapparait en une quinzaine de secondes.
 - Page introuvable apres modification de l'interface : regenerer `PagesWeb.h`
   puis recompiler et televerser le central.
