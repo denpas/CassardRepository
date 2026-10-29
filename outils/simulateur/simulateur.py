@@ -153,6 +153,22 @@ def i2c_send(frame, reason=""):
 
 # ------------------------------------------------- carte maître (R4 WiFi)
 master = {"client": None, "nonce": "", "last": 0, "ready": False}
+# Appareils du Wi-Fi, comme le firmware : adresses ayant chargé une page depuis moins de 5 min.
+WIFI_DEVICE_TIMEOUT = 300
+wifi_devices = {}
+
+
+def note_wifi_device(ip):
+    with lock:
+        known = ip in wifi_devices
+        wifi_devices[ip] = time.time()
+        if not known:
+            publish_wifi()
+
+
+def publish_wifi():
+    now = time.time()
+    emit(t="wifi", devices=sum(1 for seen in wifi_devices.values() if now - seen < WIFI_DEVICE_TIMEOUT))
 clients = {}
 next_id = [0]
 LIMITS = {(1, 4): (5, (180, 80)), (2, 12): (4, (100,)), (2, 13): (4, (100,)), (2, 14): (3, ()),
@@ -318,6 +334,8 @@ class HttpHandler(http.server.SimpleHTTPRequestHandler):
         super().end_headers()
 
     def do_GET(self):
+        if not self.path.startswith(("/simulation.html", "/evenements")):
+            note_wifi_device(self.client_address[0])
         if self.path.startswith("/simulation.html"):
             body = DASHBOARD.read_bytes()
             self.send_response(200)
@@ -361,6 +379,7 @@ class HttpHandler(http.server.SimpleHTTPRequestHandler):
             q.put(json.dumps(dict(t="serial", ms=int(time.time() * 1000),
                                   text="Point d'acces Wi-Fi \"cassard\" (WPA2) : interface sur http://192.168.4.1")))
             publish_master()
+            publish_wifi()
             for nano in nanos.values():
                 nano.publish()
         try:
@@ -386,6 +405,12 @@ if __name__ == "__main__":
     if "var WEBSOCKET_PORT = 81;" not in (WEB / "_cassard-link.js").read_text(encoding="utf-8"):
         sys.exit("_cassard-link.js : port WebSocket introuvable, mettre à jour serve_link()")
     threading.Thread(target=Server((options.hote, WS_PORT), WebSocketHandler).serve_forever, daemon=True).start()
+
+    def expire_wifi_devices():
+        while True:
+            time.sleep(5)
+            publish_wifi()
+    threading.Thread(target=expire_wifi_devices, daemon=True).start()
     print(f"Simulation : http://localhost:{HTTP_PORT}/simulation.html  (mot de passe de démo {PASSWORD!r})", flush=True)
     try:
         Server((options.hote, HTTP_PORT), HttpHandler).serve_forever()

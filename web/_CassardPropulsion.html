@@ -89,7 +89,7 @@
 
 				<div class="tx-power">
 					<span class="tx-power-label">POWER</span>
-					<button class="tx-power-switch" id="bt_connect" type="button" role="switch" aria-checked="false" aria-label="Liaison avec le navire"></button>
+					<button class="tx-power-switch" id="bt_connect" type="button" role="switch" aria-checked="false" aria-label="Liaison avec le navire (voyant)" disabled></button>
 					<span class="tx-print">Liaison</span>
 				</div>
 
@@ -169,48 +169,36 @@
 			{
 				document.getElementById("ws_state").textContent = label;
 				document.getElementById("ws_state").classList.toggle("connected", connected);
-				document.getElementById("bt_connect").setAttribute("aria-checked", ws !== null ? "true" : "false");
+				document.getElementById("bt_connect").setAttribute("aria-checked", connected ? "true" : "false");
 				document.getElementById("tx-led").classList.toggle("on", connected);
 				document.getElementById("tx-bars").classList.toggle("on", connected);
 				document.getElementById("lcd-link").textContent = connected ? "LINK" : "----";
 			}
 
-			function connect_onclick()
+			// Connexion unique au bateau, ouverte par la coquille dès le mot de passe saisi.
+			function connectToBoat()
 			{
-				if(ws === null)
+				ws = CassardLink.open();
+				ws.onopen = function()
 				{
-					ws = CassardLink.open();
-					setLinkState("Connexion…", false);
-					ws.onopen = function()
-					{
-						setLinkState("Connecté", true);
-						// Le navire repart de l'arrêt (le central le met en sécurité à chaque
-						// session) : pupitre au neutre, puis réactivité affichée envoyée,
-						// sans quoi la carte de propulsion garde son ancien réglage.
-						power = 0;
-						direction = 0;
-						updateReadouts();
-						publishControls();
-						sendCommand(18, proportion);
-					};
-					ws.onclose = function()
-					{
-						ws = null;
-						setLinkState("Non connecté", false);
-						// Liaison perdue : le central arrête le navire, le pupitre suit.
-						power = 0;
-						direction = 0;
-						updateReadouts();
-					};
-					ws.onerror = function()
-					{
-						setLinkState("Erreur de connexion", false);
-					};
-				}
-				else
+					setLinkState("Connecté", true);
+					// Le navire repart de l'arrêt (le central le met en sécurité à chaque
+					// session) : pupitre au neutre, puis réactivité affichée envoyée,
+					// sans quoi la carte de propulsion garde son ancien réglage.
+					power = 0;
+					direction = 0;
+					updateReadouts();
+					publishControls();
+					sendCommand(18, proportion);
+				};
+				ws.onclose = function()
 				{
-					ws.close();
-				}
+					setLinkState("Non connecté", false);
+					// Liaison perdue : le central arrête le navire, le pupitre suit.
+					power = 0;
+					direction = 0;
+					updateReadouts();
+				};
 			}
 
 			// ---------- Manche vu de dessus ----------
@@ -740,7 +728,7 @@
 				}
 			});
 
-			document.getElementById("bt_connect").addEventListener("click", connect_onclick);
+			connectToBoat();
 			window.addEventListener("resize", function()
 			{
 				renderJoystick(joystickView.x, joystickView.y);

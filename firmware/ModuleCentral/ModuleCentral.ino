@@ -50,29 +50,30 @@ char sessionNonce[CassardNonceLength * 2 + 1];
 uint32_t lastSequence = 0;
 uint8_t entropyPool[32];
 
-// Matrice de LED (8 lignes x 12 colonnes), trois zones fixes :
-//  colonnes 0-7  : liaison - croix clignotante à 1 Hz (aucun pilote), pixel qui
-//                  tourne sur le contour (poste connecté, mot de passe pas encore
-//                  validé), coche fixe (pilote connecté) ;
-//  colonnes 9-10 : trafic - bargraphe logarithmique des trames valides par
-//                  seconde ; le pixel du haut s'éteint 30 ms à chaque trame ;
-//  colonne 11    : erreur - « ! » allumé 2 s après une trame refusée, clignotant
-//                  rapide si les erreurs persistent (au moins 2 dans la dernière
-//                  seconde et plus de 10 % des trames).
-const char* const IconCross[8] = { "X......X", ".X....X.", "..X..X..", "...XX...", "...XX...", "..X..X..", ".X....X.", "X......X" };
-const char* const IconCheck[8] = { "........", ".......X", "......X.", ".....X..", "X...X...", ".X.X....", "..X.....", "........" };
-const uint16_t TrafficLevels[8] = { 1, 2, 5, 10, 20, 50, 100, 200 };   // trames/s pour 1 à 8 LED
+// Matrice de LED (8 lignes x 12 colonnes). Elle n'est redessinée que si son
+// contenu change, au plus toutes les 20 ms (un rendu coûte environ 70 us) :
+// l'affichage ne doit jamais freiner le pilotage.
+//  lignes 0-1             : un carré 2x2 par client de l'application (WebSocket), 4 au plus ;
+//  lignes 6-7             : un carré 2x2 par appareil du Wi-Fi, 4 au plus. Le module Wi-Fi
+//                           ne sait pas lister les appareils associés : on compte ceux
+//                           qui ont chargé une page depuis moins de 5 minutes ;
+//  lignes 3-4             : un bloc 2x2 qui avance d'une colonne (0 à 9) à chaque trame
+//                           valide, visible pendant 1 s après la dernière ;
+//  colonne 11, lignes 2-5 : trame refusée dans les 2 dernières secondes ;
+//  ligne 0, colonne 11    : témoin de vie, clignote à 1 Hz.
+const byte SquareColumns[4] = { 0, 3, 6, 9 };
+const byte MaxWifiDevices = 4;
+const uint32_t WifiDeviceTimeoutMs = 300000;
 uint8_t matrixPixels[8][12];
+bool matrixDirty = true;
 bool sessionReady = false;      // mot de passe validé (PING signé accepté)
-bool errorSeen = false;
+byte trafficStep = 0;
+bool trafficSeen = false;
 uint32_t lastFrameMs = 0;
+bool errorSeen = false;
 uint32_t lastErrorMs = 0;
-uint32_t lastRateMs = 0;
-uint16_t frameCount = 0;        // trames valides et refusées sur la seconde en cours
-uint16_t errorCount = 0;
-uint16_t framesPerSecond = 0;
-uint16_t errorsPerSecond = 0;
-uint8_t errorPercent = 0;
+uint32_t wifiDeviceIp[MaxWifiDevices];
+uint32_t wifiDeviceSeenMs[MaxWifiDevices];
 
 bool parseByteField(const char* frame, byte& position, byte& value)
 {
@@ -195,84 +196,96 @@ void reply(uint8_t client, const char* message)
 
 void noteFrame()
 {
-  frameCount++;
+  trafficStep = (trafficStep + 1) % 9;
+  trafficSeen = true;
   lastFrameMs = millis();
+  matrixDirty = true;
 }
 
 void noteError()
 {
-  errorCount++;
-  lastErrorMs = millis();
   errorSeen = true;
+  lastErrorMs = millis();
+  matrixDirty = true;
 }
 
-void drawIcon(const char* const icon[8])
+// Appareil vu sur le Wi-Fi (page chargée) : on garde les 4 plus récents.
+void noteWifiDevice(uint32_t ip, uint32_t now)
 {
-  for (byte row = 0; row < 8; row++)
-    for (byte col = 0; col < 8; col++)
-      matrixPixels[row][col] = icon[row][col] == 'X';
+  byte slot = 0;
+  for (byte i = 0; i < MaxWifiDevices; i++)
+  {
+    if (wifiDeviceIp[i] == ip)
+    {
+      slot = i;
+      break;
+    }
+    if (wifiDeviceSeenMs[i] < wifiDeviceSeenMs[slot])
+      slot = i;
+  }
+  if (wifiDeviceIp[slot] != ip)
+    matrixDirty = true;
+  wifiDeviceIp[slot] = ip;
+  wifiDeviceSeenMs[slot] = now;
 }
 
-void renderMatrix(uint32_t now)
+byte wifiDeviceCount(uint32_t now)
 {
-  memset(matrixPixels, 0, sizeof(matrixPixels));
+  byte count = 0;
+  for (byte i = 0; i < MaxWifiDevices; i++)
+    if (wifiDeviceIp[i] != 0 && now - wifiDeviceSeenMs[i] < WifiDeviceTimeoutMs)
+      count++;
+  return count;
+}
 
-  if (sessionReady)
-  {
-    drawIcon(IconCheck);
-    byte height = 0;
-    while (height < 8 && framesPerSecond >= TrafficLevels[height])
-      height++;
-    for (byte row = 0; row < height; row++)
-      matrixPixels[7 - row][9] = matrixPixels[7 - row][10] = 1;
-    if (height > 0 && now - lastFrameMs < 30)
-      matrixPixels[8 - height][9] = matrixPixels[8 - height][10] = 0;
-  }
-  else if (webSocket.connectedClients() > 0)
-  {
-    // Connexion en cours : un pixel parcourt les 28 LED du contour, un pas toutes les 40 ms.
-    byte step = (now / 40) % 28;
-    if (step < 7)
-      matrixPixels[0][step] = 1;
-    else if (step < 14)
-      matrixPixels[step - 7][7] = 1;
-    else if (step < 21)
-      matrixPixels[7][7 - (step - 14)] = 1;
-    else
-      matrixPixels[7 - (step - 21)][0] = 1;
-  }
-  else if ((now / 500) & 1)
-  {
-    drawIcon(IconCross);   // clignote : prouve que la carte tourne
-  }
-
-  bool persistent = errorsPerSecond >= 2 && errorPercent > 10;
-  if (errorSeen && now - lastErrorMs < 2000 && (!persistent || ((now / 125) & 1)))
-    for (byte row = 0; row < 8; row++)
-      if (row != 5)
-        matrixPixels[row][11] = 1;
-
-  matrix.renderBitmap(matrixPixels, 8, 12);
+void drawSquares(byte firstRow, byte count)
+{
+  for (byte i = 0; i < count && i < 4; i++)
+    matrixPixels[firstRow][SquareColumns[i]] = matrixPixels[firstRow][SquareColumns[i] + 1] =
+      matrixPixels[firstRow + 1][SquareColumns[i]] = matrixPixels[firstRow + 1][SquareColumns[i] + 1] = 1;
 }
 
 void updateMatrix()
 {
-  uint32_t now = millis();
-  if (now - lastRateMs >= 1000)
-  {
-    uint16_t total = frameCount + errorCount;
-    framesPerSecond = frameCount;
-    errorsPerSecond = errorCount;
-    errorPercent = total ? (uint32_t)errorCount * 100 / total : 0;
-    frameCount = errorCount = 0;
-    lastRateMs = now;
-  }
   static uint32_t lastRenderMs = 0;
-  if (now - lastRenderMs >= 10)
-  {
-    lastRenderMs = now;
-    renderMatrix(now);
-  }
+  static byte shownClients = 255;
+  static byte shownDevices = 255;
+  static bool shownAlive = false;
+  static bool shownTraffic = false;
+  static bool shownError = false;
+
+  uint32_t now = millis();
+  if (now - lastRenderMs < 20)
+    return;
+
+  byte clients = webSocket.connectedClients();
+  byte devices = wifiDeviceCount(now);
+  bool alive = (now / 500) & 1;
+  bool traffic = trafficSeen && now - lastFrameMs < 1000;
+  bool error = errorSeen && now - lastErrorMs < 2000;
+  if (!matrixDirty && clients == shownClients && devices == shownDevices && alive == shownAlive &&
+      traffic == shownTraffic && error == shownError)
+    return;
+
+  memset(matrixPixels, 0, sizeof(matrixPixels));
+  drawSquares(0, clients);
+  drawSquares(6, devices);
+  if (traffic)
+    matrixPixels[3][trafficStep] = matrixPixels[3][trafficStep + 1] =
+      matrixPixels[4][trafficStep] = matrixPixels[4][trafficStep + 1] = 1;
+  if (error)
+    for (byte row = 2; row <= 5; row++)
+      matrixPixels[row][11] = 1;
+  matrixPixels[0][11] = alive;
+  matrix.renderBitmap(matrixPixels, 8, 12);
+
+  shownClients = clients;
+  shownDevices = devices;
+  shownAlive = alive;
+  shownTraffic = traffic;
+  shownError = error;
+  matrixDirty = false;
+  lastRenderMs = now;
 }
 
 void endSession()
@@ -374,11 +387,13 @@ const CassardWebFile* findWebFile(const String& path)
   return nullptr;
 }
 
-void serveHttp()
+// Renvoie true si une requête a été servie.
+bool serveHttp()
 {
   WiFiClient client = httpServer.available();
   if (!client)
-    return;
+    return false;
+  noteWifiDevice((uint32_t)client.remoteIP(), millis());
 
   client.setTimeout(1000);
   String requestLine = client.readStringUntil('\n');
@@ -420,6 +435,7 @@ void serveHttp()
   }
   client.flush();
   client.stop();
+  return true;
 }
 
 void startWifi()
@@ -430,6 +446,12 @@ void startWifi()
     while (true)
       delay(1000);
   }
+
+  // Le module Wi-Fi (ESP32) n'est pas redémarré avec le microcontrôleur (par
+  // exemple après un téléversement) : on le réinitialise pour repartir d'un état
+  // propre, sans quoi le point d'accès peut se dire actif sans émettre.
+  WiFi.end();
+  delay(500);
 
 #if CASSARD_WIFI_POINT_ACCES
   WiFi.config(IPAddress(192, 168, 4, 1));
@@ -460,7 +482,7 @@ void setup()
 {
   Serial.begin(115200);
   matrix.begin();
-  renderMatrix(millis());
+  updateMatrix();
   Wire.begin();
   newSessionNonce();
   startWifi();
@@ -475,7 +497,19 @@ void setup()
 void loop()
 {
   webSocket.loop();
-  serveHttp();
+
+  // Chaque interrogation du serveur de pages coûte environ 5 ms (dialogue avec le
+  // module Wi-Fi) : 10 fois par seconde suffisent, sauf pendant le chargement d'une
+  // page (une quinzaine de fichiers), où l'on enchaîne les requêtes pendant 2 s.
+  static uint32_t lastHttpPollMs = 0;
+  static uint32_t httpBurstUntilMs = 0;
+  uint32_t now = millis();
+  if ((int32_t)(httpBurstUntilMs - now) > 0 || now - lastHttpPollMs >= 100)
+  {
+    lastHttpPollMs = now;
+    if (serveHttp())
+      httpBurstUntilMs = millis() + 2000;
+  }
 
   updateMatrix();
 

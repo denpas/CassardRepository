@@ -175,12 +175,256 @@ var CassardLink = (function()
 		}
 	}
 
+	// ---------- Connexion unique au bateau ----------
+	//
+	// La page coquille pilotage.html ouvre la connexion dès que le mot de passe est
+	// saisi et la garde pendant toute la session ; les écrans (menu, propulsion,
+	// tourelle…) s'y affichent dans des cadres qui restent chargés et partagent
+	// cette connexion via CassardLink.open().
+
+	var SCREEN_PATTERN = /^_Cassard\w+\.html$/;
+	var STATUS_LABELS = {
+		connexion: "Connexion…",
+		connecte: "Connecté",
+		reconnexion: "Reconnexion…",
+		refuse: "Mot de passe refusé",
+		reprise: "Session reprise par un autre poste",
+		ferme: "Non connecté"
+	};
+
+	function shell()
+	{
+		try
+		{
+			return window.parent !== window && window.parent.CassardShell ? window.parent.CassardShell : null;
+		}
+		catch(error)
+		{
+			return null;
+		}
+	}
+
+	function currentScreen()
+	{
+		var file = location.pathname.split("/").pop();
+		return SCREEN_PATTERN.test(file) ? file : null;
+	}
+
+	// Écran ouvert seul (hors coquille) : on passe par la coquille, ou par la
+	// connexion si aucun mot de passe n'a été saisi.
 	function requireKey()
 	{
 		if(!readKey())
 		{
 			location.replace("index.html");
 		}
+		else if(currentScreen() && !shell())
+		{
+			location.replace("pilotage.html#" + currentScreen());
+		}
+	}
+
+	// Appelée une seule fois, par la coquille. Reconnexion automatique toutes les
+	// 2 s si la liaison tombe ; arrêt définitif si le mot de passe est refusé ou si
+	// un autre poste prend la main (pas de reprise en boucle entre deux téléphones).
+	function connect(options)
+	{
+		var key = readKey();
+		var boat = { readyState: 0, status: "connexion" };
+		var views = [];
+		var socket = null;
+		var nonce = null;
+		var sequence = 0;
+		var stopped = false;
+		var everOpened = false;
+
+		function setStatus(status)
+		{
+			boat.status = status;
+			views.forEach(function(view) { view._status(status); });
+			if(options && options.onstatus)
+			{
+				options.onstatus(status);
+			}
+		}
+
+		function sendSigned(payload)
+		{
+			sequence++;
+			socket.send(signFrame(key, nonce, sequence, payload) + "\r\n");
+		}
+
+		function stop(status)
+		{
+			stopped = true;
+			if(socket)
+			{
+				socket.close();
+			}
+			setStatus(status);
+		}
+
+		function openSocket()
+		{
+			boat.readyState = 0;
+			setStatus(everOpened ? "reconnexion" : "connexion");
+			socket = new WebSocket("ws://" + location.hostname + ":" + WEBSOCKET_PORT + "/", WEBSOCKET_PROTOCOL);
+			var thisSocket = socket;
+			socket.onopen = function()
+			{
+				thisSocket.send("AUTH\r\n");
+			};
+			socket.onmessage = function(event)
+			{
+				var lines = String(event.data).split(/\r?\n/);
+				for(var i = 0; i < lines.length; i++)
+				{
+					var line = lines[i].trim();
+					if(line.indexOf("NONCE,") === 0)
+					{
+						nonce = line.substr(6);
+						sequence = 0;
+						sendSigned("PING");
+					}
+					else if(line === "AUTH,OK")
+					{
+						if(boat.readyState !== 1)
+						{
+							boat.readyState = 1;
+							everOpened = true;
+							setStatus("connecte");
+							views.forEach(function(view) { view._open(); });
+						}
+					}
+					else if(line === "AUTH,REPRISE")
+					{
+						stop("reprise");
+						return;
+					}
+					else if(line === "AUTH,ERR")
+					{
+						if(boat.readyState !== 1)
+						{
+							stop("refuse");
+							return;
+						}
+					}
+					else if(line !== "")
+					{
+						views.forEach(function(view) { view._message(line); });
+					}
+				}
+			};
+			socket.onclose = function()
+			{
+				if(thisSocket !== socket)
+				{
+					return;
+				}
+				var wasOpen = boat.readyState === 1;
+				boat.readyState = 3;
+				if(wasOpen)
+				{
+					views.forEach(function(view) { view._close(); });
+				}
+				if(stopped)
+				{
+					// Les écrans viennent d'écrire « Non connecté » : on rétablit la raison
+					// de l'arrêt (mot de passe refusé, session reprise, verrouillage).
+					setStatus(boat.status);
+				}
+				else
+				{
+					setStatus("reconnexion");
+					setTimeout(function() { if(!stopped) openSocket(); }, 2000);
+				}
+			};
+		}
+
+		boat.send = function(text)
+		{
+			if(boat.readyState === 1)
+			{
+				sendSigned(String(text).trim());
+			}
+		};
+		boat.close = function()
+		{
+			stop("ferme");
+		};
+		boat.reconnect = function()
+		{
+			stopped = false;
+			if(socket)
+			{
+				socket.onclose = null;
+				socket.close();
+			}
+			openSocket();
+		};
+		// Vue pour un écran : même interface qu'un WebSocket (readyState, send,
+		// onopen, onclose, onmessage) ; elle met aussi à jour le témoin #ws_state.
+		boat.attach = function(screenDocument)
+		{
+			var view = { onopen: null, onclose: null, onerror: null, onmessage: null };
+			Object.defineProperty(view, "readyState", { get: function() { return boat.readyState; } });
+			view.send = boat.send;
+			view.close = function() {};
+			view._open = function() { if(view.onopen) view.onopen(); };
+			view._close = function() { if(view.onclose) view.onclose(); };
+			view._message = function(line) { if(view.onmessage) view.onmessage({ data: line }); };
+			view._status = function(status)
+			{
+				var label = screenDocument && screenDocument.getElementById("ws_state");
+				if(label)
+				{
+					label.textContent = STATUS_LABELS[status] || status;
+					label.classList.toggle("connected", status === "connecte");
+				}
+			};
+			views.push(view);
+			// L'écran installe ses gestionnaires juste après : on le prévient ensuite.
+			setTimeout(function()
+			{
+				view._status(boat.status);
+				if(boat.readyState === 1)
+				{
+					view._open();
+				}
+			}, 0);
+			return view;
+		};
+
+		openSocket();
+		return boat;
+	}
+
+	// Dans un écran : vue sur la connexion unique de la coquille.
+	function open()
+	{
+		var host = shell();
+		if(host)
+		{
+			return host.attach(document);
+		}
+		requireKey();
+		return { readyState: 0, send: function() {}, close: function() {} };
+	}
+
+	// Verrouiller : coupe la connexion, oublie la clé et revient à la page de connexion.
+	function lock()
+	{
+		forget();
+		var host = shell();
+		if(host)
+		{
+			host.lock();
+		}
+		else
+		{
+			location.replace("index.html");
+		}
+		return false;
 	}
 
 	function signFrame(key, nonce, sequence, payload)
@@ -189,119 +433,30 @@ var CassardLink = (function()
 		return payload + "|" + sequence + "|" + mac;
 	}
 
-	function open()
+	// Dans la coquille, les liens entre écrans changent d'écran sans recharger.
+	if(typeof document !== "undefined")
 	{
-		var key = readKey();
-		var link = { readyState: 0, error: "", onopen: null, onclose: null, onerror: null, onmessage: null };
-		var socket = new WebSocket("ws://" + location.hostname + ":" + WEBSOCKET_PORT + "/", WEBSOCKET_PROTOCOL);
-		var nonce = null;
-		var sequence = 0;
-
-		function sendSigned(payload)
+		document.addEventListener("click", function(event)
 		{
-			sequence++;
-			socket.send(signFrame(key, nonce, sequence, payload) + "\r\n");
-		}
-
-		function fail(message)
-		{
-			link.error = message;
-			socket.close();
-		}
-
-		socket.onopen = function()
-		{
-			if(!key)
+			var host = shell();
+			var anchor = event.target.closest ? event.target.closest("a[href]") : null;
+			if(!host || !anchor)
 			{
-				fail("Mot de passe requis");
 				return;
 			}
-			socket.send("AUTH\r\n");
-		};
-		socket.onmessage = function(event)
-		{
-			var lines = String(event.data).split(/\r?\n/);
-			for(var i = 0; i < lines.length; i++)
+			var href = anchor.getAttribute("href");
+			if(SCREEN_PATTERN.test(href))
 			{
-				var line = lines[i].trim();
-				if(line.indexOf("NONCE,") === 0)
-				{
-					if(link.readyState === 1)
-					{
-						fail("Session reprise par un autre poste");
-						return;
-					}
-					nonce = line.substr(6);
-					sequence = 0;
-					sendSigned("PING");
-				}
-				else if(line === "AUTH,OK")
-				{
-					if(link.readyState !== 1)
-					{
-						link.readyState = 1;
-						if(link.onopen)
-						{
-							link.onopen();
-						}
-					}
-				}
-				else if(line === "AUTH,REPRISE")
-				{
-					fail("Session reprise par un autre poste");
-					return;
-				}
-				else if(line === "AUTH,ERR")
-				{
-					if(link.readyState !== 1)
-					{
-						fail("Mot de passe refusé");
-						return;
-					}
-				}
-				else if(line !== "" && link.onmessage)
-				{
-					link.onmessage({ data: line });
-				}
+				event.preventDefault();
+				host.show(href);
 			}
-		};
-		socket.onerror = function(event)
-		{
-			if(link.onerror)
-			{
-				link.onerror(event);
-			}
-		};
-		socket.onclose = function()
-		{
-			link.readyState = 3;
-			if(link.onclose)
-			{
-				link.onclose();
-			}
-			var status = document.getElementById("ws_state");
-			if(link.error && status)
-			{
-				status.textContent = link.error;
-			}
-		};
-
-		link.send = function(text)
-		{
-			if(link.readyState === 1)
-			{
-				sendSigned(String(text).trim());
-			}
-		};
-		link.close = function()
-		{
-			socket.close();
-		};
-		return link;
+		}, true);
 	}
 
 	return {
 		open: open,
+		connect: connect,
+		lock: lock,
 		storePassword: storePassword,
 		forget: forget,
 		requireKey: requireKey,

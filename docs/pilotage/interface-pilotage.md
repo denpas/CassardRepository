@@ -20,12 +20,33 @@ poignées caoutchouc, sérigraphies, accents orange, trims et interrupteur
 **POWER**. Ils sont conçus pour l'iPhone 16e en portrait (390 × 844 points,
 zones de sécurité comprises) et restent centrés sur un écran plus large. Leur
 en-tête sombre affiche le lien de retour au tableau de bord (logo CASSARD), le
-nom du module et le témoin de connexion; la liaison s'ouvre et se ferme avec
-l'interrupteur POWER.
+nom du module et le témoin de connexion ; l'interrupteur POWER sert de voyant
+de liaison.
 
 Les autres écrans (connexion, tableau de bord, instruments, sons & lumières,
-diagnostic) gardent la présentation en cartes claires sur barre bleu marine,
-avec un bouton « Connecter » dans l'en-tête des pages qui utilisent la liaison.
+diagnostic) gardent la présentation en cartes claires sur barre bleu marine.
+
+## Connexion au bateau
+
+Saisir le mot de passe, c'est se connecter au bateau. La page de connexion
+ouvre la coquille `web/pilotage.html`, qui établit aussitôt **une seule
+liaison** avec le module central et la garde pendant toute la session :
+
+- les écrans (menu, propulsion, tourelle, instruments, sons & lumières,
+  diagnostic) s'affichent dans des cadres qui restent chargés : passer d'un
+  écran à l'autre ne coupe pas la liaison et conserve les réglages (le moteur
+  garde sa consigne pendant qu'on règle la tourelle) ; le bouton retour du
+  navigateur ramène à l'écran précédent ;
+- si la liaison tombe, la coquille se reconnecte toute seule toutes les 2 s
+  (témoin « Reconnexion… ») ; le central ayant mis le navire en sécurité, les
+  pupitres reviennent au neutre ;
+- si un autre poste prend la main, la coquille ne se reconnecte pas seule (pas
+  de vol de session en boucle entre deux téléphones) : un bandeau propose
+  « Reprendre la main » ;
+- un mot de passe refusé par le bateau ramène à la page de connexion ;
+- « Verrouiller » (tableau de bord) coupe la liaison et efface la clé.
+
+Un écran ouvert seul (par son adresse) passe par la coquille.
 
 ## Écrans
 
@@ -33,8 +54,9 @@ avec un bouton « Connecter » dans l'en-tête des pages qui utilisent la liaiso
 
 Page d'accueil avec le champ « Mot de passe de pilotage ». Le mot de passe
 n'est pas envoyé : le navigateur en dérive la clé de signature des commandes et
-la garde pour l'onglet en cours. Un mot de passe erroné est détecté à la
-connexion au navire (« Mot de passe refusé »). Voir [securite.md](./securite.md).
+la garde pour l'onglet en cours, puis ouvre la coquille, qui se connecte au
+bateau. Un mot de passe erroné ramène ici avec « Mot de passe refusé par le
+bateau ». Voir [securite.md](./securite.md).
 
 ### 2. Tableau de bord — `web/_CassardMenu.html`
 
@@ -66,8 +88,9 @@ comprises); sur un écran plus large, la radiocommande reste centrée.
 - **Trim direction horizontal, sous le manche** : boutons BÂB / TRI (pas de 5°);
   les valeurs négatives envoient le braquage à gauche (16), les valeurs positives
   celui à droite (15) et le centre le recentrage (17).
-- **Interrupteur POWER** : ouvre ou ferme la liaison WebSocket; le voyant et les
-  barres orange s'allument une fois connecté.
+- **Interrupteur POWER** : voyant de liaison (il bascule, et le voyant et les
+  barres orange s'allument, une fois connecté) ; à chaque connexion, le pupitre
+  repart du neutre et envoie la réactivité affichée.
 - **Écran LCD** : affiche puissance, direction et réactivité.
 - **Trim de réactivité** vertical, à droite de l'écran : réactivité moteur de 0
   à 5 (un cran par niveau, boutons RÉA+ / RÉA−), commande 18 du module 2. Elle
@@ -98,8 +121,8 @@ vertical (390 × 844), sans défilement : les deux vues se partagent la hauteur.
   Cadran gradué de 0 à 80° avec index orange.
 - **Trim d'élévation** vertical à droite de la vue de profil : boutons HAUT /
   BAS (pas de 5°).
-- **Interrupteur POWER** : ouvre la liaison authentifiée ; la position courante
-  est envoyée dès que le mot de passe est accepté.
+- **Interrupteur POWER** : voyant de liaison ; la position courante est
+  envoyée à chaque connexion.
 
 À chaque changement, la page envoie les deux coordonnées dans une trame
 unique de commande 4 au module 1 (regroupées toutes les 80 ms). L'azimut
@@ -132,8 +155,8 @@ n'est pas établie avant l'envoi.
 
 ## Connexion et limites fonctionnelles
 
-La connexion est établie séparément depuis chaque écran de commande. Le point
-WebSocket utilisé est `ws://<hôte>:81/`, avec le sous-protocole `cassard`, via
+La connexion unique est ouverte par la coquille (voir « Connexion au bateau »).
+Le point WebSocket utilisé est `ws://<hôte>:81/`, avec le sous-protocole `cassard`, via
 `_cassard-link.js` qui authentifie la liaison et signe chaque
 trame. Le témoin ne passe à « Connecté » qu'après acceptation du mot de passe
 par le navire; il ne confirme pas

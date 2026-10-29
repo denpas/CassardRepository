@@ -22,6 +22,10 @@
 	</main>
 	<script src="_cassard-link.js"></script>
 	<script>
+		if(location.search.indexOf("refuse") >= 0)
+		{
+			document.getElementById("login-status").textContent = "Mot de passe refusé par le bateau.";
+		}
 		document.getElementById("login-form").addEventListener("submit", function(event)
 		{
 			event.preventDefault();
@@ -31,7 +35,7 @@
 			{
 				CassardLink.storePassword(field.value);
 				field.value = "";
-				location.replace("_CassardMenu.html");
+				location.replace("pilotage.html");
 			}, 20);
 		});
 	</script>

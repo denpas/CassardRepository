@@ -45,8 +45,7 @@ sequenceDiagram
     participant Actionneur as Moteur ou servo
 
     Operateur->>Web: Saisit le mot de passe (cle derivee dans le navigateur)
-    Operateur->>Web: Active POWER
-    Web->>Central: AUTH
+    Web->>Central: AUTH (connexion unique, ouverte aussitot)
     Central-->>Web: NONCE aleatoire
     Web->>Central: PING signe
     Central-->>Web: AUTH,OK (ou AUTH,ERR)
@@ -71,7 +70,7 @@ sequenceDiagram
   la valide puis la route vers l'adresse `1` ou `2` en maitre I2C. Il arrete le
   moteur et recentre la barre a chaque nouvelle session et des que la liaison
   du pilote est perdue (WebSocket ferme ou sans reponse au ping, environ 3 s).
-  La matrice de LED de la carte affiche son etat en trois zones (voir
+  La matrice de LED de la carte affiche clients, trames et erreurs (voir
   [montage-et-deploiement.md](./montage-et-deploiement.md#matrice-de-led-du-module-central)).
 - **Module propulsion** (`firmware/ModulePropulsion`) : esclave `2`; commande les moteurs
   continus et le servo de direction.

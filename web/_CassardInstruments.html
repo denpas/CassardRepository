@@ -79,22 +79,19 @@
 					ws.close();		
 			}
 
+			// Connexion unique au bateau, ouverte par la coquille dès le mot de passe saisi.
+			document.addEventListener("DOMContentLoaded", connect_onclick);
+
 			function ws_onopen()
 			{
 				document.getElementById("ws_state").textContent = "Connecté";
 				document.getElementById("ws_state").classList.add("connected");
-				document.getElementById("bt_connect").textContent = "Déconnecter";
 			}
 
 			function ws_onclose()
 			{
 				document.getElementById("ws_state").textContent = "Non connecté";
 				document.getElementById("ws_state").classList.remove("connected");
-				document.getElementById("bt_connect").textContent = "Connecter";
-				ws.onopen = null;
-				ws.onclose = null;
-				ws.onmessage = null;
-				ws = null;
 			}
 
 			function ws_onmessage(e_msg)
@@ -110,7 +107,6 @@
 			<div class="header-title">Instruments</div>
 			<div class="header-actions">
 				<span class="connection-status" id="ws_state">Non connecté</span>
-				<button class="app-button" id="bt_connect" type="button" onclick="connect_onclick();">Connecter</button>
 			</div>
 		</header>
 		<main class="page-shell instrument-panel">

@@ -55,8 +55,8 @@ bruit sert a l'alea du nonce de session.
 6. Compiler et televerser `ModuleCentral` (FQBN `arduino:renesas_uno:unor4wifi`).
    Les pages font partie du firmware : il n'y a plus de fichiers a copier.
 7. Rejoindre le Wi-Fi du navire, ouvrir `http://192.168.4.1/` (ou l'adresse
-   donnee par la box), se connecter avec le mot de passe de pilotage, activer
-   POWER puis verifier d'abord les axes sans charge mecanique et avec des
+   donnee par la box), se connecter avec le mot de passe de pilotage (la
+   liaison s'ouvre seule) puis verifier d'abord les axes sans charge mecanique et avec des
    limites physiques securisees : sens de rotation du servo d'azimut (90 = axe
    du navire, au-dela de 90 = tribord) et course d'elevation jusqu'a 80°.
 8. Verifier l'arret de securite : fermer la page ou couper le Wi-Fi de l'iPhone
@@ -72,16 +72,26 @@ arduino-cli compile --fqbn arduino:renesas_uno:unor4wifi --libraries firmware/li
 
 ## Matrice de LED du module central
 
-La matrice 8 x 12 du R4 WiFi est decoupee en trois zones fixes, lisibles de
-loin :
+La matrice 8 x 12 du R4 WiFi n'est redessinee que lorsque son contenu change,
+au plus toutes les 20 ms (un rendu coute environ 70 us) : l'affichage ne freine
+jamais le pilotage.
 
-| Colonnes | Zone | Affichage |
+| Lignes | Zone | Affichage |
 | --- | --- | --- |
-| 0 a 7 | Liaison | croix clignotant a 1 Hz : aucun pilote (le clignotement prouve que la carte tourne) ; pixel tournant sur le contour : poste connecte, mot de passe pas encore valide ; coche fixe : pilote connecte |
-| 9 et 10 | Trafic | bargraphe des trames valides par seconde, echelle logarithmique : 1, 2, 5, 10, 20, 50, 100, 200 trames/s pour 1 a 8 LED ; le pixel du haut s'eteint 30 ms a chaque trame. Barre vide avec la coche : connecte mais aucune commande |
-| 11 | Erreur | « ! » allume 2 s apres une trame refusee (signature, rejeu, trame non signee ou trop longue, commande invalide) ; clignotement rapide si les erreurs persistent (au moins 2 dans la seconde et plus de 10 % des trames) |
+| 0-1 | Application | un carre 2x2 par client connecte a l'application (WebSocket), 4 au plus |
+| 3-4 | Trames | un bloc 2x2 qui avance d'une colonne a chaque trame valide recue (sa vitesse suit le debit), visible 1 s apres la derniere |
+| 2-5, colonne 11 | Erreur | trait vertical allume 2 s apres une trame refusee (signature, rejeu, trame non signee ou trop longue, commande invalide) |
+| 6-7 | Wi-Fi | un carre 2x2 par appareil du Wi-Fi, 4 au plus |
+| 0, colonne 11 | Vie | pixel qui clignote a 1 Hz : un pixel fige signale un firmware bloque |
 
-Une croix figee (sans clignotement) signale un firmware bloque.
+Le module Wi-Fi du R4 ne sait pas lister les appareils associes a son point
+d'acces : la zone Wi-Fi compte les appareils (adresses IP) qui ont charge une
+page de l'application depuis moins de 5 minutes. Un telephone associe au Wi-Fi
+qui n'a pas ouvert l'application n'y apparait pas.
+
+Mesure sur la carte : un tour de `loop()` dure environ 5 ms (190 tours/s),
+dont l'essentiel en dialogue avec le module Wi-Fi ; le serveur de pages n'est
+interroge que 10 fois par seconde, sauf pendant le chargement d'une page.
 
 ## Depannage rapide
 
@@ -98,5 +108,9 @@ Une croix figee (sans clignotement) signale un firmware bloque.
 - Les firmwares ne renvoient pas encore de statut de commande a l'interface.
 - Le moniteur serie du central (115 200 bauds) affiche le mode Wi-Fi, l'adresse
   de l'interface et les arrets de securite sur perte de liaison.
+- Apres un televersement, le reseau « cassard » reapparait au bout d'environ
+  15 s. Le module Wi-Fi (ESP32) n'est pas redemarre par le televersement : le
+  firmware le reinitialise (`WiFi.end()`) a chaque demarrage, sans quoi le point
+  d'acces pouvait se dire actif sans emettre.
 - Page introuvable apres modification de l'interface : regenerer `PagesWeb.h`
   puis recompiler et televerser le central.

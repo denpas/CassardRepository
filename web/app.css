@@ -1093,6 +1093,12 @@ body.helm-page {
 	transform: translateX(24px);
 }
 
+/* Voyant de liaison : la connexion est ouverte par le mot de passe, pas par l'interrupteur */
+.tx-power-switch:disabled {
+	cursor: default;
+	opacity: 1;
+}
+
 .tx-power-switch:focus-visible {
 	outline: 2px solid var(--tx-orange);
 	outline-offset: 3px;

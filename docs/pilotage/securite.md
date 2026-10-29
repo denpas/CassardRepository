@@ -32,11 +32,14 @@ se fait donc **sur l'Arduino, trame par trame**.
    l'a ouverte ; les trames d'un autre client sont refusées. Chaque `AUTH`
    invalide la session précédente : l'Arduino envoie l'arrêt moteur et le
    recentrage du gouvernail avant d'ouvrir la nouvelle, et l'ancien poste reçoit
-   `AUTH,REPRISE` (« Session reprise par un autre poste »).
+   `AUTH,REPRISE` (« Session reprise par un autre poste »). L'application ne
+   se reconnecte alors pas d'elle-même : un bandeau propose « Reprendre la
+   main », pour éviter que deux téléphones se volent la session en boucle.
 6. **Arrêt sur perte de liaison** : l'Arduino envoie un ping WebSocket chaque
    seconde. Si le poste de pilotage ferme la liaison ou ne répond plus (navire
    hors de portée, iPhone en veille), la session est close en 3 s environ, avec
-   arrêt moteur et barre au centre.
+   arrêt moteur et barre au centre. L'application se reconnecte seule dès que
+   la liaison revient (nouvelle session, pupitres au neutre).
 
 Le code est dans `firmware/ModuleCentral/CassardAuth.h` (Arduino) et
 `web/_cassard-link.js` (navigateur).
