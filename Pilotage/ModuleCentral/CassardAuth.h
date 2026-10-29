@@ -9,14 +9,17 @@
 #include <stdint.h>
 #include <string.h>
 
-// Les constantes et la clé de pilotage sont en mémoire flash (PROGMEM) pour
-// préserver la RAM de l'Uno : la clé passée aux fonctions doit y être aussi.
-#ifdef ARDUINO
+// Les constantes et la clé de pilotage sont déclarées PROGMEM : sur AVR elles
+// restent en flash et se lisent avec pgm_read_*, la clé passée aux fonctions
+// devant y être aussi ; sur ARM (UNO R4) la flash est adressable directement.
+#if defined(__AVR__)
 #include <avr/pgmspace.h>
 #define CASSARD_PGM_DWORD(address) pgm_read_dword(address)
 #define CASSARD_PGM_BYTE(address) pgm_read_byte(address)
 #else
+#ifndef PROGMEM
 #define PROGMEM
+#endif
 #define CASSARD_PGM_DWORD(address) (*(address))
 #define CASSARD_PGM_BYTE(address) (*(address))
 #endif

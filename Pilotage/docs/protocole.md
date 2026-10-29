@@ -7,8 +7,9 @@ Chaque octet `255` termine une trame I2C.
 
 ## Authentification
 
-Depuis la sécurisation du pilotage, le central n'accepte que des trames signées.
-Le navigateur envoie d'abord `AUTH\r\n`; le central répond `NONCE,<32 hex>`.
+Le WebSocket du module central (Arduino UNO R4 WiFi) est `ws://<hôte>:81/`,
+sous-protocole `cassard`. Le central n'accepte que des trames signées. Le
+navigateur envoie d'abord `AUTH\r\n`; le central répond `NONCE,<32 hex>`.
 Chaque commande est ensuite transmise sous la forme :
 
 ```text
@@ -17,8 +18,10 @@ Chaque commande est ensuite transmise sous la forme :
 ```
 
 La première trame signée est `PING`; le central répond `AUTH,OK` ou
-`AUTH,ERR`. Toute trame non signée, rejouée ou falsifiée reçoit `AUTH,ERR` et
-n'est pas transmise sur le bus I2C. Le détail du calcul est dans
+`AUTH,ERR`. Toute trame non signée, rejouée, falsifiée ou venant d'un autre
+client que celui de la session reçoit `AUTH,ERR` et n'est pas transmise sur le
+bus I2C. Quand un autre poste ouvre une session, l'ancien reçoit
+`AUTH,REPRISE`. Le détail du calcul est dans
 [securite.md](./securite.md). Les trames décrites ci-dessous correspondent à la
 partie `<trame>`.
 

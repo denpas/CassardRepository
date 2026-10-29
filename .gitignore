@@ -333,3 +333,6 @@ Photos/
 
 # Clé de pilotage du module central (tools/generer-cle-pilotage.py)
 Pilotage/ModuleCentral/CassardSecret.h
+Pilotage/ModuleCentral/CassardWifi.h
+# Pages web embarquées, générées par tools/generer-pages-web.py
+Pilotage/ModuleCentral/PagesWeb.h

@@ -1,8 +1,3 @@
-<?php
-	include_once "_config.php";
-	include_once "/lib/sc_envu.php";
-?>
-
 <!doctype html>
 
 <html lang="fr">
@@ -12,15 +7,12 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		
 		<link rel='stylesheet prefetch' href='_normalize.min.css'>
-		<link rel='stylesheet prefetch' href='_rangeslider.css'>
 		<link rel="stylesheet" href="style.css">
 		<link rel="stylesheet" href="app.css">
 		<script src="_cassard-link.js"></script>
 		<script>CassardLink.requireKey();</script>
 		
 		<script src='_gauge.min.js'></script>
-		<script src='_jquery.min.js'></script>
-		<script src='_rangeslider.min.js'></script>
 
 		<script>
 			var ws;
@@ -114,7 +106,7 @@
 	</head>
 	<body class="control-page">
 		<header class="app-header">
-			<a class="brand" href="_CassardMenu.php"><span class="brand-mark">C</span>CASSARD <span class="eyebrow" style="color:#b9c9da">PILOTAGE</span></a>
+			<a class="brand" href="_CassardMenu.html"><span class="brand-mark">C</span>CASSARD <span class="eyebrow" style="color:#b9c9da">PILOTAGE</span></a>
 			<div class="header-title">Instruments</div>
 			<div class="header-actions">
 				<span class="connection-status" id="ws_state">Non connecté</span>

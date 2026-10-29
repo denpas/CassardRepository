@@ -2,13 +2,12 @@
 
 ## Menace visée
 
-Le module central reçoit les commandes sur `ws://<hôte>/_Cassard`. Sans
-protection, toute personne connectée au même réseau Wi-Fi peut ouvrir ce
-WebSocket et piloter le navire, ou rejouer des trames captées. Une simple page
-de connexion ne suffit pas : PHPoC ne gère pas de sessions, et le serveur
-WebSocket de l'Arduino ne distingue pas les clients, si bien qu'un attaquant
-peut contourner les pages HTML et parler directement au WebSocket. La
-vérification se fait donc **sur l'Arduino, trame par trame**.
+Le module central (Arduino UNO R4 WiFi) reçoit les commandes sur
+`ws://<hôte>:81/`. Sans protection, toute personne connectée au même réseau
+Wi-Fi peut ouvrir ce WebSocket et piloter le navire, ou rejouer des trames
+captées. Une simple page de connexion ne suffit pas : un attaquant peut
+contourner les pages HTML et parler directement au WebSocket. La vérification
+se fait donc **sur l'Arduino, trame par trame**.
 
 ## Mécanisme
 
@@ -29,10 +28,15 @@ vérification se fait donc **sur l'Arduino, trame par trame**.
 4. **Vérification du mot de passe** : la première trame signée est `PING`;
    l'Arduino répond `AUTH,OK` (liaison ouverte) ou `AUTH,ERR` (« Mot de passe
    refusé » dans l'interface).
-5. **Un seul poste à la fois** : chaque `AUTH` invalide la session précédente.
-   L'Arduino envoie alors l'arrêt moteur et le recentrage du gouvernail avant
-   d'ouvrir la nouvelle session ; l'ancien poste affiche « Session reprise par
-   un autre poste ».
+5. **Un seul poste à la fois** : la session est liée au client WebSocket qui
+   l'a ouverte ; les trames d'un autre client sont refusées. Chaque `AUTH`
+   invalide la session précédente : l'Arduino envoie l'arrêt moteur et le
+   recentrage du gouvernail avant d'ouvrir la nouvelle, et l'ancien poste reçoit
+   `AUTH,REPRISE` (« Session reprise par un autre poste »).
+6. **Arrêt sur perte de liaison** : l'Arduino envoie un ping WebSocket chaque
+   seconde. Si le poste de pilotage ferme la liaison ou ne répond plus (navire
+   hors de portée, iPhone en veille), la session est close en 3 s environ, avec
+   arrêt moteur et barre au centre.
 
 Le code est dans `ModuleCentral/CassardAuth.h` (Arduino) et
 `ModuleCentral/web/_cassard-link.js` (navigateur).
@@ -49,18 +53,18 @@ Le code est dans `ModuleCentral/CassardAuth.h` (Arduino) et
 
    Le script écrit `Pilotage/ModuleCentral/CassardSecret.h`, exclu de Git. Sans
    ce fichier, le module central ne compile pas.
-3. **Recompiler et téléverser `ModuleCentral`**, puis copier le contenu de
-   `ModuleCentral/web` sur PHPoC (dont `_cassard-link.js`).
-4. **Protéger le Wi-Fi** : point d'accès en WPA2 avec une clé forte, distincte
-   du mot de passe de pilotage. C'est la première barrière.
-5. **Protéger PHPoC** : dans PHPoC Debugger, définir les mots de passe des
-   comptes `admin` et `setup` (8 à 32 caractères). Sans cela, la page
-   « Configuration réseau » (`setup_info.php`) et l'accès au module restent
-   ouverts. PHPoC ne permet pas de récupérer un mot de passe oublié : il faut
-   alors réinitialiser le module, ce qui efface réglages et fichiers.
-6. **Essai** : se connecter avec un mauvais mot de passe (l'interface doit
+3. **Protéger le Wi-Fi** : dans `ModuleCentral/CassardWifi.h` (copie non
+   versionnée de `CassardWifi.exemple.h`), le point d'accès du navire est en
+   WPA2 ; choisir une clé forte, distincte du mot de passe de pilotage. C'est la
+   première barrière. La compilation échoue si la clé fait moins de 8
+   caractères.
+4. **Générer les pages, recompiler et téléverser `ModuleCentral`** : les pages
+   sont embarquées dans le firmware, il n'y a rien d'autre à copier ni de compte
+   d'administration à protéger sur la carte.
+5. **Essai** : se connecter avec un mauvais mot de passe (l'interface doit
    afficher « Mot de passe refusé » et le navire ne doit pas réagir), puis avec
-   le bon, hélice hors de l'eau.
+   le bon, hélice hors de l'eau ; enfin couper le Wi-Fi de l'iPhone moteur en
+   marche : il doit s'arrêter en quelques secondes.
 
 Pour changer le mot de passe : relancer le script, recompiler, téléverser.
 
@@ -77,7 +81,7 @@ et les trames non signées sont refusés.
 
 ## Limites connues
 
-- **Pas de chiffrement** : PHPoC sert la page en HTTP et le WebSocket en `ws://`.
+- **Pas de chiffrement** : la carte sert la page en HTTP et le WebSocket en `ws://`.
   Les commandes restent lisibles sur le réseau ; elles ne sont pas falsifiables.
   La confidentialité repose sur le WPA2 du Wi-Fi.
 - **Attaque hors ligne** : quelqu'un qui capte une trame signée peut tester des
@@ -89,10 +93,9 @@ et les trames non signées sont refusés.
 - **Aléa du nonce** : l'Arduino n'a pas de générateur matériel ; le nonce mélange
   bruit analogique et gigue d'horloge. Cela suffit à empêcher le rejeu entre
   sessions, pas à résister à une analyse matérielle.
-- **Compilé, pas encore essayé sur la carte** : le module central compile pour
-  Uno (84 % de flash, 703 octets de RAM libre, environ 490 octets de pile au plus
-  profond pendant la vérification) et pour Mega 2560 (voir le README). La
-  source de la bibliothèque PHPoC 1.5.1 confirme que `client.print()` écrit sur
-  le socket du client concerné, le firmware PHPoC assurant le tramage WebSocket.
-  Les trames sont lues dans un tampon de 64 caractères : `readLine()` sans
-  argument les tronquerait à 32. Reste à valider sur la carte réelle.
+- **Compilé et simulé, pas encore essayé sur la carte** : le module central
+  compile pour l'UNO R4 WiFi (49 % de flash, 21 Ko de RAM libre, voir le
+  README). La poignée de main, la prise de main par un autre poste et l'arrêt
+  sur déconnexion ont été vérifiés avec l'interface réelle face à un simulateur
+  du central. Restent à valider sur la carte : le Wi-Fi, le délai effectif de
+  détection d'une perte de liaison et le bus I2C.

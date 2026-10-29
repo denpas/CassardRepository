@@ -1,34 +1,36 @@
 # Pilotage du Cassard
 
-Le pilotage est constitue de trois firmwares Arduino et d'une interface web sur
-le module central. Le central recoit les commandes WebSocket et les transmet par
-I2C au module concerne.
+Le pilotage est constitue de trois firmwares Arduino et d'une interface web
+servie par le module central, un Arduino UNO R4 WiFi. Le central recoit les
+commandes signees par WebSocket et les transmet par I2C au module concerne.
 
 ## Structure
 
 ```text
 Pilotage/
-  ModuleCentral/                 Sketch central et site PHPoC
+  ModuleCentral/                 Sketch central (Arduino UNO R4 WiFi)
     ModuleCentral.ino
-    web/                         Fichiers a deployer sur PHPoC
-    firmware/                    Images firmware PHPoC conservees
+    CassardAuth.h                Verification des trames signees
+    CassardWifi.exemple.h        Modele des reglages Wi-Fi
+    web/                         Interface web, embarquee dans le firmware
   ModulePropulsion/              Sketch de propulsion (I2C 2)
   ModuleTourelle/                Sketch de tourelle (I2C 1)
   libraries/CassardControl/      Bibliotheque Arduino partagee
-  tools/                         Generation de cle et tests d'authentification
-  Archive/Legacy/                Anciens prototypes non maintenus
+  tools/                         Generation de cle, des pages embarquees, tests
+  Archive/Legacy/                Anciens prototypes non maintenus (dont PHPoC)
   docs/                          Protocole et deploiement
 ```
 
 Les sketches actifs sont dans des dossiers du meme nom que leur fichier `.ino`.
-`Archive/Legacy` contient les anciens essais PAP, servo et Yun; ils ne font pas
-partie des trois firmwares actifs.
+`Archive/Legacy` contient les anciens essais PAP, servo et Yun, ainsi que la
+version PHPoC du module central (Arduino UNO + shield PHPoC, remplacee par
+l'UNO R4 WiFi) : images firmware et fichiers web devenus inutiles.
 
 ## Modules
 
 | Module | Role | Interface |
 | --- | --- | --- |
-| Central | WebSocket/PHPoC, validation et routage des trames | I2C maitre |
+| Central (UNO R4 WiFi) | Interface web (port 80), WebSocket signe (port 81), validation et routage des trames | Wi-Fi, I2C maitre |
 | Propulsion | Deux moteurs continus et servo de direction | I2C esclave 2 |
 | Tourelle | Servos d'azimut et d'elevation | I2C esclave 1 |
 
@@ -38,7 +40,7 @@ firmwares et les instructions de compilation/deploiement sont dans
 [docs/montage-et-deploiement.md](./docs/montage-et-deploiement.md).
 Le schema des composants et des flux est disponible dans
 [docs/architecture.md](./docs/architecture.md).
-La securisation du pilotage (mot de passe, trames signees, Wi-Fi et PHPoC) et
+La securisation du pilotage (mot de passe, trames signees, Wi-Fi, arret sur perte de liaison) et
 sa mise en service sont decrites dans [docs/securite.md](./docs/securite.md).
 Les ecrans de pilotage et leurs limites sont decrits dans
 [docs/interface-pilotage.md](./docs/interface-pilotage.md); une video de
@@ -53,46 +55,45 @@ Environnement verifie (macOS Apple Silicon) :
 ```sh
 # arduino-cli officiel (https://downloads.arduino.cc/arduino-cli/), place dans le PATH
 softwareupdate --install-rosetta --agree-to-license   # Apple Silicon : avr-gcc est x86_64
-arduino-cli core update-index && arduino-cli core install arduino:avr   # 1.8.8
-arduino-cli lib update-index && arduino-cli lib install "PHPoC@1.5.1"
+arduino-cli core update-index
+arduino-cli core install arduino:avr            # modules Nano (1.8.8)
+arduino-cli core install arduino:renesas_uno    # module central UNO R4 WiFi (1.6.0)
+arduino-cli lib update-index && arduino-cli lib install "WebSockets@2.7.2"
 ```
 
 `CassardControl` est une bibliotheque locale (`libraries/CassardControl`) : chaque
 sketch inclut d'abord `<CassardControl.h>`, sans quoi Arduino ne la detecte pas.
-Depuis la racine du depot, avec Arduino CLI:
+Ses parties servo et tampon circulaire ne sont compilees que sur AVR (modules
+Nano); le central n'utilise que `Protocol.h`.
+
+Le module central a besoin de trois fichiers generes, non versionnes :
+
+```sh
+python3 Pilotage/tools/generer-cle-pilotage.py    # ModuleCentral/CassardSecret.h (cle de pilotage)
+cp Pilotage/ModuleCentral/CassardWifi.exemple.h Pilotage/ModuleCentral/CassardWifi.h   # puis le completer
+python3 Pilotage/tools/generer-pages-web.py       # ModuleCentral/PagesWeb.h (interface compressee)
+```
+
+Relancer `generer-pages-web.py` apres toute modification de `ModuleCentral/web` :
+l'interface est embarquee dans le firmware du central. Depuis la racine du depot :
 
 ```sh
 arduino-cli compile --fqbn arduino:avr:nano --libraries Pilotage/libraries Pilotage/ModulePropulsion
 arduino-cli compile --fqbn arduino:avr:nano --libraries Pilotage/libraries Pilotage/ModuleTourelle
+arduino-cli compile --fqbn arduino:renesas_uno:unor4wifi --libraries Pilotage/libraries Pilotage/ModuleCentral
 ```
 
-Compiler le module central avec le profil correspondant exactement a la carte et
-au materiel PHPoC utilises, par exemple:
+Ajouter `--upload --port <port>` pour televerser (`arduino-cli board list`
+donne le port). Un seul televersement du central suffit : pages web comprises.
 
-```sh
-arduino-cli compile --fqbn arduino:avr:uno --libraries Pilotage/libraries Pilotage/ModuleCentral
-```
-
-Le central requiert la bibliotheque `Phpoc` fournie pour le materiel PHPoC et
-le fichier `ModuleCentral/CassardSecret.h`, genere (hors Git) par
-`python3 Pilotage/tools/generer-cle-pilotage.py`.
-Verifier que la cible choisie correspond a la carte reelle: les commandes ci-
-dessus indiquent des profils d'exemple, pas une detection automatique du
-materiel.
-
-Occupation memoire mesuree (arduino:avr 1.8.8, PHPoC 1.5.1) :
+Occupation memoire mesuree (arduino:avr 1.8.8, arduino:renesas_uno 1.6.0,
+WebSockets 2.7.2) :
 
 | Sketch | Carte | Flash | RAM globale (reste) |
 | --- | --- | --- | --- |
-| ModuleCentral | Uno | 27 268 o (84 %) | 1 345 o (703 o) |
-| ModuleCentral | Mega 2560 | 28 728 o (11 %) | 1 564 o (6 628 o) |
+| ModuleCentral | UNO R4 WiFi | 130 848 o (49 %), dont 44 Ko de pages | 11 080 o (21 688 o) |
 | ModulePropulsion | Nano | 12 870 o (41 %) | 1 292 o (756 o) |
 | ModuleTourelle | Nano | 12 352 o (40 %) | 1 297 o (751 o) |
-
-Sur Uno, la verification d'une trame utilise environ 490 octets de pile au
-plus profond (mesure `-fstack-usage`) : eviter d'ajouter des variables globales
-ou des `String` au module central sans remesurer. Televerser chaque sketch sur sa carte puis deployer le contenu de
-`ModuleCentral/web` sur le serveur web PHPoC.
 
 ## Limitations connues
 

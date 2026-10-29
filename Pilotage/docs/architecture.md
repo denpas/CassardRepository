@@ -6,7 +6,7 @@
 flowchart LR
     operator["Operateur"]
     browser["Navigateur<br/>Interface de pilotage"]
-    central["Module central<br/>PHPoC + ModuleCentral.ino<br/>WebSocket et maitre I2C"]
+    central["Module central<br/>Arduino UNO R4 WiFi<br/>HTTP 80, WebSocket 81, maitre I2C"]
     propulsion["Module propulsion<br/>I2C esclave 2"]
     turret["Module tourelle<br/>I2C esclave 1"]
     propulsionActuators["Moteurs gauche/droit<br/>Servo de direction"]
@@ -14,7 +14,7 @@ flowchart LR
     shared["Bibliotheque partagee<br/>CassardControl"]
 
     operator --> browser
-    browser -->|"WebSocket /_Cassard<br/>trames texte signees"| central
+    browser -->|"HTTP : pages embarquees<br/>WebSocket :81 trames signees"| central
     central -.->|"NONCE, AUTH,OK / AUTH,ERR"| browser
     central -->|"I2C adresse 2<br/>commandes propulsion"| propulsion
     central -->|"I2C adresse 1<br/>position azimut/elevation"| turret
@@ -26,7 +26,8 @@ flowchart LR
 ```
 
 Le navigateur ne commande pas directement les esclaves : il envoie des trames
-texte signees au serveur WebSocket PHPoC du module central. Le central verifie
+texte signees au WebSocket du module central (port 81), qui sert aussi les
+pages de l'interface depuis sa memoire flash (port 80). Le central verifie
 la signature et la sequence de chaque trame, valide les champs, convertit les
 valeurs en octets, puis choisit l'adresse I2C d'apres le numero du module. Les
 deux cartes esclaves n'ont pas de liaison reseau directe. Le mecanisme
@@ -63,11 +64,15 @@ sequenceDiagram
 
 - **Interface web** (`ModuleCentral/web`) : expose les controles de propulsion et
   de tourelle, derive la cle de pilotage et emet les commandes signees via le
-  WebSocket PHPoC (`_cassard-link.js`).
+  WebSocket du central (`_cassard-link.js`).
 - **Module central** (`ModuleCentral/ModuleCentral.ino`, `CassardAuth.h`) :
-  maitre I2C; authentifie la session, verifie chaque trame, la valide puis la
-  route vers l'adresse `1` ou `2`. A chaque nouvelle session, il arrete le
-  moteur et recentre la barre.
+  Arduino UNO R4 WiFi, point d'acces WPA2 (ou client d'une box); sert
+  l'interface, authentifie la session du poste de pilotage, verifie chaque trame,
+  la valide puis la route vers l'adresse `1` ou `2` en maitre I2C. Il arrete le
+  moteur et recentre la barre a chaque nouvelle session et des que la liaison
+  du pilote est perdue (WebSocket ferme ou sans reponse au ping, environ 3 s).
+  La matrice de LED de la carte indique l'etat (point : aucun pilote, cadre :
+  pilote connecte, cadre pointe : commande transmise).
 - **Module propulsion** (`ModulePropulsion`) : esclave `2`; commande les moteurs
   continus et le servo de direction.
 - **Module tourelle** (`ModuleTourelle`) : esclave `1`; commande les servos
@@ -83,6 +88,6 @@ service sont dans [montage-et-deploiement.md](./montage-et-deploiement.md).
 
 Les commandes vont de l'interface vers le central puis vers l'esclave concerne.
 Le central ne repond au navigateur que pour l'authentification (`NONCE`,
-`AUTH,OK`, `AUTH,ERR`). Le protocole I2C n'envoie pas d'accuse de reception
+`AUTH,OK`, `AUTH,ERR`, `AUTH,REPRISE`). Le protocole I2C n'envoie pas d'accuse de reception
 applicatif aux pages web; celles-ci ne connaissent donc pas l'etat reel d'un
 actionneur.

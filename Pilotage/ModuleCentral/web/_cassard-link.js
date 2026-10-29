@@ -5,6 +5,8 @@
 // "<charge>|<sequence>|<mac>", mac = 16 premiers hex de
 // HMAC-SHA256(cle, nonce + "|" + sequence + "|" + charge), le nonce étant
 // fourni par l'Arduino en réponse à "AUTH". Voir ModuleCentral/CassardAuth.h.
+// Le module central (Arduino UNO R4 WiFi) sert les pages sur le port 80 et le
+// WebSocket sur le port 81.
 //
 // CassardLink.open() renvoie un objet qui se comporte comme un WebSocket
 // (readyState, send, close, onopen, onclose, onerror, onmessage) ; onopen n'est
@@ -15,6 +17,8 @@ var CassardLink = (function()
 	var KEY_STORAGE = "cassard.pilotKey";
 	var SALT = "CASSARD-D614-pilotage";
 	var ITERATIONS = 10000;
+	var WEBSOCKET_PORT = 81;
+	var WEBSOCKET_PROTOCOL = "cassard";
 	var K = [
 		0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
 		0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
@@ -189,7 +193,7 @@ var CassardLink = (function()
 	{
 		var key = readKey();
 		var link = { readyState: 0, error: "", onopen: null, onclose: null, onerror: null, onmessage: null };
-		var socket = new WebSocket("ws://" + location.host + "/_Cassard", "text.phpoc");
+		var socket = new WebSocket("ws://" + location.hostname + ":" + WEBSOCKET_PORT + "/", WEBSOCKET_PROTOCOL);
 		var nonce = null;
 		var sequence = 0;
 
@@ -241,6 +245,11 @@ var CassardLink = (function()
 							link.onopen();
 						}
 					}
+				}
+				else if(line === "AUTH,REPRISE")
+				{
+					fail("Session reprise par un autre poste");
+					return;
 				}
 				else if(line === "AUTH,ERR")
 				{

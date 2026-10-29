@@ -1,7 +1,9 @@
 # Interface de pilotage
 
-Cette documentation décrit les écrans web du module central PHPoC. Les pages
-sont servies depuis `ModuleCentral/web` et utilisent la feuille de style
+Cette documentation décrit les écrans web du module central (Arduino UNO R4
+WiFi). Les pages, en HTML statique, sont écrites dans `ModuleCentral/web`,
+compressées dans le firmware par `tools/generer-pages-web.py` et servies par la
+carte sur le port 80 ; elles utilisent la feuille de style
 commune `app.css`, ainsi que deux scripts partagés :
 
 - `_cassard-link.js` : liaison WebSocket authentifiée et signature des trames
@@ -34,17 +36,15 @@ n'est pas envoyé : le navigateur en dérive la clé de signature des commandes 
 la garde pour l'onglet en cours. Un mot de passe erroné est détecté à la
 connexion au navire (« Mot de passe refusé »). Voir [securite.md](./securite.md).
 
-### 2. Tableau de bord — `web/_CassardMenu.php`
+### 2. Tableau de bord — `web/_CassardMenu.html`
 
 Présente sous forme de cartes les accès à Propulsion & direction, Tourelle
 100 mm, Instruments, Sons & lumières et à la Console de diagnostic. Le lien
-« Configuration réseau » ouvre la page `setup_info.php` fournie par PHPoC.
 « Verrouiller » efface la clé de pilotage de l'onglet. Les pages de commande
-renvoient vers la connexion si aucune clé n'est présente.
-Lorsque PHPoC signale le mode `SETUP`, le tableau de bord affiche un avertissement
-à la place des modules.
+renvoient vers la connexion si aucune clé n'est présente. Les réglages Wi-Fi se
+font dans le firmware (`CassardWifi.h`), plus depuis une page.
 
-### 3. Propulsion & direction — `web/_CassardPropulsion.php`
+### 3. Propulsion & direction — `web/_CassardPropulsion.html`
 
 L'écran reproduit la face d'une radiocommande de modélisme (type Spektrum DX6i)
 et est mis en page pour l'iPhone 16e (390 × 844 points, zones de sécurité
@@ -70,12 +70,12 @@ comprises); sur un écran plus large, la radiocommande reste centrée.
 - **Molette** (à droite de l'écran) : réactivité moteur de 0 à 5, commande 18 du
   module 2.
 
-Les commandes sont transmises au serveur WebSocket PHPoC `/_Cassard`. Les
+Les commandes sont transmises au WebSocket du module central (port 81). Les
 modifications combinées sont regroupées avant l'envoi pour limiter la cadence
 des trames. Le relâchement du joystick envoie immédiatement les deux commandes
 de sécurité. Une perte de connexion ne produit pas de commandes différées.
 
-### 4. Tourelle 100 mm — `web/_CassardTourelle.php`
+### 4. Tourelle 100 mm — `web/_CassardTourelle.html`
 
 Même coque et mêmes trims que le pupitre propulsion, au format iPhone 16e
 vertical (390 × 844), sans défilement : les deux vues se partagent la hauteur.
@@ -105,7 +105,7 @@ tribord) ; l'élévation servo vaut l'angle du canon (0 à 80). **Le sens de
 rotation réel du servo d'azimut et la course mécanique jusqu'à 80° doivent être
 vérifiés sur la maquette** avant usage.
 
-### 5. Instruments — `web/_CassardInstruments.php`
+### 5. Instruments — `web/_CassardInstruments.html`
 
 La page affiche cinq indicateurs en tr/min et en pourcentage : moteur gauche,
 arbre gauche, puissance, arbre droit et moteur droit. Leurs plages et zones
@@ -114,13 +114,13 @@ actuellement pas de retour d'état des modules vers le navigateur : ces
 indicateurs ne constituent donc pas une télémétrie réelle tant qu'une source de
 mesures n'est pas raccordée.
 
-### 6. Sons & lumières — `web/_CassardSonsEtLumieres.php`
+### 6. Sons & lumières — `web/_CassardSonsEtLumieres.html`
 
 Présente l'écran du module et son état de connexion. Il indique que les
 commandes ne sont pas disponibles dans la version actuelle; aucune commande de
 son ou d'éclairage n'est implémentée dans cet écran.
 
-### 7. Console de diagnostic — `web/_CassardDebug.php`
+### 7. Console de diagnostic — `web/_CassardDebug.html`
 
 Permet de saisir une trame brute (par exemple `2,14,255`), de l'envoyer sur la
 connexion active — la page la signe automatiquement — et d'effacer l'historique
@@ -130,8 +130,8 @@ n'est pas établie avant l'envoi.
 ## Connexion et limites fonctionnelles
 
 La connexion est établie séparément depuis chaque écran de commande. Le point
-WebSocket utilisé est `ws://<hôte>/_Cassard`, avec le sous-protocole
-`text.phpoc`, via `_cassard-link.js` qui authentifie la liaison et signe chaque
+WebSocket utilisé est `ws://<hôte>:81/`, avec le sous-protocole `cassard`, via
+`_cassard-link.js` qui authentifie la liaison et signe chaque
 trame. Le témoin ne passe à « Connecté » qu'après acceptation du mot de passe
 par le navire; il ne confirme pas
 l'exécution d'une commande par un actionneur. Les messages et plages de
@@ -164,7 +164,7 @@ Cette vidéo est une maquette visuelle de parcours : elle montre les sept écran
 dont le nouveau pupitre avec joystick 3D, curseur de puissance sous le joystick
 et curseur de direction à sa droite. Les valeurs sont illustratives; la vidéo
 n'ouvre aucun WebSocket et ne commande pas le bateau. Elle ne remplace pas un
-essai sur le serveur PHPoC.
+essai sur la carte.
 
 Pour régénérer la vidéo sur macOS avec Swift et AVFoundation :
 

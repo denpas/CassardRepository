@@ -1,3 +1,7 @@
+// Compile seulement sur AVR et ESP8266 (sections atomiques) : le module
+// central (UNO R4 WiFi) n'utilise que Protocol.h.
+#if defined(__AVR__) || defined(ESP8266)
+
 /*
   RingBuf.c - Library for implementing a simple Ring Buffer on Arduino boards.
   Created by D. Aaron Wisner (daw268@cornell.edu)
@@ -184,3 +188,5 @@ bool RingBufIsEmpty(RingBuf *self)
 
   return ret;
 }
+
+#endif

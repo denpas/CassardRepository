@@ -1,3 +1,7 @@
+// Compile seulement sur AVR (timers des modules Nano) : le module
+// central (UNO R4 WiFi) n'utilise que Protocol.h.
+#if defined(__AVR__)
+
 /*
  Servo.cpp - Interrupt driven Servo library for Arduino using 16 bit timers- Version 2
  Copyright (c) 2009 Michael Margolis.  All right reserved.
@@ -529,3 +533,5 @@ bool VarSpeedServo::isMoving() {
 	int servos[channel].target;
 }
 */
+
+#endif
