@@ -158,9 +158,10 @@ main { display: grid; grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr);
 </main>
 <script>
 // Matrice de LED du R4 : même algorithme que renderMatrix() dans ModuleCentral.ino.
-var SQUARE_COLUMNS = [0, 3, 6, 9];
+var ICON_APPLICATION = [".XX", "X..", ".XX"];
+var ICON_WIFI = [".X.", "XXX", "XXX"];
 var link = { clients: 0, ready: false, devices: 0 };
-var traffic = { step: 0, lastFrame: -1e9, lastError: -1e9 };
+var traffic = { step: 0, lastFrame: -1e9, lastError: -1e9, i2cStep: 0, lastI2c: -1e9 };
 var matrixCells = [];
 for(var i = 0; i < 96; i++)
 {
@@ -243,7 +244,7 @@ var handlers = {
 	{
 		if(e.ok)
 		{
-			traffic.step = (traffic.step + 1) % 9;
+			traffic.step = (traffic.step + 1) % 8;
 			traffic.lastFrame = performance.now();
 		}
 		else
@@ -270,6 +271,8 @@ var handlers = {
 	},
 	i2c: function(e)
 	{
+		traffic.i2cStep = (traffic.i2cStep + 1) % 8;
+		traffic.lastI2c = performance.now();
 		var bytes = e.bytes.join(",");
 		append("i2c", '<span class="t">' + time(e.ms) + "</span> → adresse " + e.addr + "  [" + bytes + "]  " + e.label +
 			(e.reason ? '  <span class="info">(sécurité : ' + escapeHtml(e.reason) + ")</span>" : ""), 40);
@@ -321,21 +324,33 @@ function renderMatrix()
 	{
 		pixels.push([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
 	}
-	function squares(firstRow, count)
+	function icon(rows, firstRow)
 	{
-		for(var i = 0; i < Math.min(count, 4); i++)
+		for(var r = 0; r < 3; r++)
 		{
-			var c = SQUARE_COLUMNS[i];
-			pixels[firstRow][c] = pixels[firstRow][c + 1] = pixels[firstRow + 1][c] = pixels[firstRow + 1][c + 1] = 1;
+			for(var c = 0; c < 3; c++)
+			{
+				pixels[firstRow + r][c] = rows[r][c] === "X" ? 1 : 0;
+			}
 		}
 	}
-	squares(0, link.clients);
-	squares(6, link.devices);
+	if(link.clients > 0)
+	{
+		icon(ICON_APPLICATION, 0);
+	}
+	if(link.devices > 0)
+	{
+		icon(ICON_WIFI, 5);
+	}
 	var trafficOn = now - traffic.lastFrame < 1000;
 	if(trafficOn)
 	{
-		var s = traffic.step;
-		pixels[3][s] = pixels[3][s + 1] = pixels[4][s] = pixels[4][s + 1] = 1;
+		pixels[traffic.step][5] = 1;          // trames reçues : de haut en bas
+	}
+	var i2cOn = now - traffic.lastI2c < 1000;
+	if(i2cOn)
+	{
+		pixels[7 - traffic.i2cStep][7] = 1;   // trames I2C : de bas en haut
 	}
 	var errorOn = now - traffic.lastError < 2000;
 	if(errorOn)
@@ -354,9 +369,9 @@ function renderMatrix()
 		}
 	}
 	document.getElementById("matrix-label").textContent =
-		link.clients + " client" + (link.clients > 1 ? "s" : "") + " de l'application" + (link.ready ? " (pilote connecté)" : "") +
-		" · " + link.devices + " appareil" + (link.devices > 1 ? "s" : "") + " Wi-Fi" +
-		(trafficOn ? " · trames" : "") + (errorOn ? " · trame refusée" : "");
+		(link.clients > 0 ? "application connectée" + (link.ready ? " (pilote)" : "") : "application : personne") +
+		" · " + (link.devices > 0 ? "Wi-Fi : " + link.devices + " appareil" + (link.devices > 1 ? "s" : "") : "Wi-Fi : aucun appareil") +
+		(trafficOn ? " · trames reçues" : "") + (i2cOn ? " · I2C" : "") + (errorOn ? " · trame refusée" : "");
 }
 setInterval(renderMatrix, 20);
 

@@ -45,12 +45,25 @@ const byte MaxFrameLength = 64;
 const byte MaxPayloadLength = 24;
 
 WiFiServer httpServer(HttpPort);
-// La bibliothèque WebSockets ne fournit pas remoteIP() sur l'UNO R4 : on lit
-// l'adresse sur la connexion TCP du client, une seule fois, à sa connexion.
+// Adaptations de la bibliothèque WebSockets à l'UNO R4 (WiFiS3) :
+//  - loop() : la bibliothèque appelle accept() à chaque tour et crée un client même
+//    sans connexion en attente (socket -1), aussitôt jeté avec un événement
+//    « déconnecté » parasite (environ 120 par seconde) ; on ne crée un client que
+//    pour une vraie connexion ;
+//  - clientAddress() : remoteIP() n'est pas fournie sur l'UNO R4 ; on lit
+//    l'adresse sur la connexion TCP du client, une seule fois, à sa connexion.
 class CassardWebSocketServer : public WebSocketsServer
 {
   public:
     using WebSocketsServer::WebSocketsServer;
+
+    void loop()
+    {
+      WiFiClient pending = _server->accept();
+      if (pending)
+        handleNewClient(new WiFiClient(pending));
+      WebSocketsServerCore::loop();
+    }
 
     uint32_t clientAddress(uint8_t num)
     {
@@ -72,30 +85,38 @@ uint8_t entropyPool[32];
 // Matrice de LED (8 lignes x 12 colonnes). Elle n'est redessinée que si son
 // contenu change, au plus toutes les 20 ms (un rendu coûte environ 70 us) :
 // l'affichage ne doit jamais freiner le pilotage.
-//  lignes 0-1             : un carré 2x2 par client de l'application (WebSocket), 4 au plus ;
-//  lignes 6-7             : un carré 2x2 par appareil du Wi-Fi, 4 au plus. Le module Wi-Fi
+//  lignes 0-2, col. 0-2   : « C » - un poste est connecté à l'application (connexion
+//                           exclusive : une seule icône) ;
+//  lignes 5-7, col. 0-2   : antenne - au moins un appareil sur le Wi-Fi. Le module Wi-Fi
 //                           ne sait pas lister les appareils associés : on compte ceux
 //                           qui ont l'application ouverte (liaison WebSocket active,
 //                           retirés dès sa perte, ~3 s) ou qui ont chargé une page
-//                           depuis moins de 30 s ;
-//  lignes 3-4             : un bloc 2x2 qui avance d'une colonne (0 à 9) à chaque trame
-//                           valide, visible pendant 1 s après la dernière ;
+//                           depuis moins de 10 s ;
+//  colonne 5             : trames reçues - un pixel qui descend d'une ligne à chaque
+//                           trame valide reçue, visible 1 s après la dernière ;
+//  colonne 7             : trames I2C - un pixel qui monte d'une ligne à chaque trame
+//                           émise vers les cartes Nano, visible 1 s après la dernière ;
 //  colonne 11, lignes 2-5 : trame refusée dans les 2 dernières secondes ;
 //  ligne 0, colonne 11    : témoin de vie, clignote à 1 Hz.
-const byte SquareColumns[4] = { 0, 3, 6, 9 };
+const char* const IconApplication[3] = { ".XX", "X..", ".XX" };
+const char* const IconWifi[3] = { ".X.", "XXX", "XXX" };
 const byte MaxWifiDevices = 4;
-const uint32_t WifiDeviceTimeoutMs = 30000;
+const uint32_t WifiDeviceTimeoutMs = 10000;
 uint8_t matrixPixels[8][12];
 bool matrixDirty = true;
 bool sessionReady = false;      // mot de passe validé (PING signé accepté)
-byte trafficStep = 0;
-bool trafficSeen = false;
+byte receivedStep = 0;
+bool receivedSeen = false;
 uint32_t lastFrameMs = 0;
+byte i2cStep = 0;
+bool i2cSeen = false;
+uint32_t lastI2cMs = 0;
 bool errorSeen = false;
 uint32_t lastErrorMs = 0;
 uint32_t wifiDeviceIp[MaxWifiDevices];
 uint32_t wifiDeviceSeenMs[MaxWifiDevices];
 uint32_t webSocketClientIp[WEBSOCKETS_SERVER_CLIENT_MAX];   // 0 : emplacement libre
+bool webSocketClientConnected[WEBSOCKETS_SERVER_CLIENT_MAX];
 
 bool parseByteField(const char* frame, byte& position, byte& value)
 {
@@ -174,8 +195,17 @@ bool parseCommand(const char* frame, byte* command, byte& fieldCount)
   return true;
 }
 
+void noteI2cFrame()
+{
+  i2cStep = (i2cStep + 1) % 8;
+  i2cSeen = true;
+  lastI2cMs = millis();
+  matrixDirty = true;
+}
+
 void forwardCommand(const byte* command, byte fieldCount)
 {
+  noteI2cFrame();
   Wire.beginTransmission(command[0]);
   for (byte field = 0; field < fieldCount; field++)
     Wire.write(command[field]);
@@ -218,8 +248,8 @@ void reply(uint8_t client, const char* message)
 
 void noteFrame()
 {
-  trafficStep = (trafficStep + 1) % 9;
-  trafficSeen = true;
+  receivedStep = (receivedStep + 1) % 8;
+  receivedSeen = true;
   lastFrameMs = millis();
   matrixDirty = true;
 }
@@ -251,7 +281,7 @@ void noteWifiDevice(uint32_t ip, uint32_t now)
   wifiDeviceSeenMs[slot] = now;
 }
 
-// Appareils distincts : liaison WebSocket ouverte, ou page chargée depuis moins de 30 s.
+// Appareils distincts : liaison WebSocket ouverte, ou page chargée depuis moins de 10 s.
 byte wifiDeviceCount(uint32_t now)
 {
   uint32_t seen[WEBSOCKETS_SERVER_CLIENT_MAX + MaxWifiDevices];
@@ -274,51 +304,57 @@ byte wifiDeviceCount(uint32_t now)
   return count;
 }
 
-void drawSquares(byte firstRow, byte count)
+void drawIcon(const char* const icon[3], byte firstRow)
 {
-  for (byte i = 0; i < count && i < 4; i++)
-    matrixPixels[firstRow][SquareColumns[i]] = matrixPixels[firstRow][SquareColumns[i] + 1] =
-      matrixPixels[firstRow + 1][SquareColumns[i]] = matrixPixels[firstRow + 1][SquareColumns[i] + 1] = 1;
+  for (byte row = 0; row < 3; row++)
+    for (byte col = 0; col < 3; col++)
+      matrixPixels[firstRow + row][col] = icon[row][col] == 'X';
 }
 
 void updateMatrix()
 {
   static uint32_t lastRenderMs = 0;
-  static byte shownClients = 255;
-  static byte shownDevices = 255;
+  static bool shownApplication = false;
+  static bool shownWifi = false;
   static bool shownAlive = false;
-  static bool shownTraffic = false;
+  static bool shownReceived = false;
+  static bool shownI2c = false;
   static bool shownError = false;
 
   uint32_t now = millis();
   if (now - lastRenderMs < 20)
     return;
 
-  byte clients = webSocket.connectedClients();
-  byte devices = wifiDeviceCount(now);
+  bool application = webSocket.connectedClients() > 0;
+  bool wifi = wifiDeviceCount(now) > 0;
   bool alive = (now / 500) & 1;
-  bool traffic = trafficSeen && now - lastFrameMs < 1000;
+  bool received = receivedSeen && now - lastFrameMs < 1000;
+  bool i2c = i2cSeen && now - lastI2cMs < 1000;
   bool error = errorSeen && now - lastErrorMs < 2000;
-  if (!matrixDirty && clients == shownClients && devices == shownDevices && alive == shownAlive &&
-      traffic == shownTraffic && error == shownError)
+  if (!matrixDirty && application == shownApplication && wifi == shownWifi && alive == shownAlive &&
+      received == shownReceived && i2c == shownI2c && error == shownError)
     return;
 
   memset(matrixPixels, 0, sizeof(matrixPixels));
-  drawSquares(0, clients);
-  drawSquares(6, devices);
-  if (traffic)
-    matrixPixels[3][trafficStep] = matrixPixels[3][trafficStep + 1] =
-      matrixPixels[4][trafficStep] = matrixPixels[4][trafficStep + 1] = 1;
+  if (application)
+    drawIcon(IconApplication, 0);
+  if (wifi)
+    drawIcon(IconWifi, 5);
+  if (received)
+    matrixPixels[receivedStep][5] = 1;       // de haut en bas
+  if (i2c)
+    matrixPixels[7 - i2cStep][7] = 1;        // de bas en haut
   if (error)
     for (byte row = 2; row <= 5; row++)
       matrixPixels[row][11] = 1;
   matrixPixels[0][11] = alive;
   matrix.renderBitmap(matrixPixels, 8, 12);
 
-  shownClients = clients;
-  shownDevices = devices;
+  shownApplication = application;
+  shownWifi = wifi;
   shownAlive = alive;
-  shownTraffic = traffic;
+  shownReceived = received;
+  shownI2c = i2c;
   shownError = error;
   matrixDirty = false;
   lastRenderMs = now;
@@ -402,14 +438,26 @@ void onWebSocketEvent(uint8_t client, WStype_t type, uint8_t* data, size_t lengt
       handleFrame(client, data, length);
       break;
     case WStype_CONNECTED:
-      if (client < WEBSOCKETS_SERVER_CLIENT_MAX)
-        webSocketClientIp[client] = webSocket.clientAddress(client);
+      if (client >= WEBSOCKETS_SERVER_CLIENT_MAX)
+        break;
+      webSocketClientConnected[client] = true;
+      webSocketClientIp[client] = webSocket.clientAddress(client);
       matrixDirty = true;
+      Serial.print(F("Application : client "));
+      Serial.print(client);
+      Serial.print(F(" connecte depuis "));
+      Serial.println(IPAddress(webSocketClientIp[client]));
       break;
     case WStype_DISCONNECTED:
-      if (client < WEBSOCKETS_SERVER_CLIENT_MAX)
-        webSocketClientIp[client] = 0;
+      // Seul un client vraiment connecté compte (pas une poignée de main avortée).
+      if (client >= WEBSOCKETS_SERVER_CLIENT_MAX || !webSocketClientConnected[client])
+        break;
+      webSocketClientConnected[client] = false;
+      webSocketClientIp[client] = 0;
       matrixDirty = true;
+      Serial.print(F("Application : client "));
+      Serial.print(client);
+      Serial.println(F(" deconnecte"));
       // Liaison du pilote perdue (fermeture, ou plus de réponse au ping :
       // navire hors de portée) : arrêt moteur et barre au centre.
       if (client == sessionClient)

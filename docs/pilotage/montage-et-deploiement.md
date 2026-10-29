@@ -76,20 +76,22 @@ La matrice 8 x 12 du R4 WiFi n'est redessinee que lorsque son contenu change,
 au plus toutes les 20 ms (un rendu coute environ 70 us) : l'affichage ne freine
 jamais le pilotage.
 
-| Lignes | Zone | Affichage |
+| Position | Zone | Affichage |
 | --- | --- | --- |
-| 0-1 | Application | un carre 2x2 par client connecte a l'application (WebSocket), 4 au plus |
-| 3-4 | Trames | un bloc 2x2 qui avance d'une colonne a chaque trame valide recue (sa vitesse suit le debit), visible 1 s apres la derniere |
-| 2-5, colonne 11 | Erreur | trait vertical allume 2 s apres une trame refusee (signature, rejeu, trame non signee ou trop longue, commande invalide) |
-| 6-7 | Wi-Fi | un carre 2x2 par appareil du Wi-Fi (application ouverte, ou page chargee depuis moins de 30 s), 4 au plus |
-| 0, colonne 11 | Vie | pixel qui clignote a 1 Hz : un pixel fige signale un firmware bloque |
+| lignes 0-2, colonnes 0-2 | Application | « C » (`.XX` / `X..` / `.XX`) : un poste est connecte a l'application (connexion exclusive, une seule icone) |
+| colonne 5 | Trames recues | un pixel qui descend d'une ligne a chaque trame valide recue de l'application (sa vitesse suit le debit), visible 1 s apres la derniere |
+| colonne 7 | Trames I2C | un pixel qui monte d'une ligne a chaque trame emise vers les cartes Nano (y compris les arrets de securite), visible 1 s apres la derniere |
+| colonne 11, lignes 2-5 | Erreur | trait vertical allume 2 s apres une trame refusee (signature, rejeu, trame non signee ou trop longue, commande invalide) |
+| lignes 5-7, colonnes 0-2 | Wi-Fi | antenne (`.X.` / `XXX` / `XXX`) : au moins un appareil sur le Wi-Fi |
+| ligne 0, colonne 11 | Vie | pixel qui clignote a 1 Hz : un pixel fige signale un firmware bloque |
 
 Le module Wi-Fi du R4 ne sait pas lister les appareils associes a son point
 d'acces : la zone Wi-Fi compte les appareils (adresses IP) qui ont
 l'application ouverte (liaison WebSocket active) ou qui ont charge une page
-depuis moins de 30 s. Un appareil qui quitte le Wi-Fi disparait des que la carte
-detecte la perte de sa liaison (environ 3 s, ou 30 s s'il n'avait charge
-qu'une page). Un telephone associe au Wi-Fi sans ouvrir l'application n'y
+depuis moins de 10 s. Un appareil qui quitte le Wi-Fi disparait des que la carte
+detecte la perte de sa liaison (environ 3 s, ou 10 s s'il n'avait charge
+qu'une page). Le moniteur serie (115 200 bauds) note chaque connexion et
+deconnexion a l'application, avec l'adresse de l'appareil. Un telephone associe au Wi-Fi sans ouvrir l'application n'y
 apparait pas.
 
 Mesure sur la carte : un tour de `loop()` dure environ 5 ms (190 tours/s),

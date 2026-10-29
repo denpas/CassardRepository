@@ -154,8 +154,8 @@ def i2c_send(frame, reason=""):
 # ------------------------------------------------- carte maître (R4 WiFi)
 master = {"client": None, "nonce": "", "last": 0, "ready": False}
 # Appareils du Wi-Fi, comme le firmware : adresses avec une liaison WebSocket ouverte,
-# ou ayant chargé une page depuis moins de 30 s.
-WIFI_DEVICE_TIMEOUT = 30
+# ou ayant chargé une page depuis moins de 10 s.
+WIFI_DEVICE_TIMEOUT = 10
 wifi_devices = {}
 
 
